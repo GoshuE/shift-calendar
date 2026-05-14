@@ -401,12 +401,45 @@ body {
 
 .modal-shift-item input[type="text"] { width: 80px; }
 .modal-shift-item input[type="time"] { width: 110px; }
-.modal-shift-item input[type="color"] {
-  width: 36px; height: 36px;
-  border: none; padding: 0;
-  border-radius: 50%;
-  cursor: pointer;
+.color-picker-wrap {
+  position: relative;
 }
+
+.color-current {
+  width: 32px; height: 32px;
+  border-radius: 50%;
+  border: 2px solid #dadce0;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.color-dropdown {
+  display: none;
+  position: absolute;
+  top: 40px;
+  left: 0;
+  background: white;
+  border-radius: 12px;
+  padding: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+  z-index: 10;
+  gap: 6px;
+  flex-wrap: wrap;
+  width: 168px;
+}
+
+.color-dropdown.open { display: flex; }
+
+.color-swatch {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.color-swatch:active { transform: scale(0.9); }
+.color-swatch.selected { border-color: #202124; }
 
 .modal-shift-item .delete-btn {
   background: none;
@@ -502,30 +535,29 @@ let tokenClient;
 let accessToken = null;
 
 const DEFAULT_SHIFTS = [
-  { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#ea8600' },
-  { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#7b1fa2' },
+  { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#f28b1e' },
+  { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#8e24aa' },
 ];
 
 const GCAL_COLORS = {
-  '1':  [121,134,203], '2':  [51,182,121],  '3':  [142,36,170],
-  '4':  [230,124,115], '5':  [246,191,38],  '6':  [242,139,30],
-  '7':  [3,155,229],   '8':  [97,97,97],    '9':  [63,81,181],
-  '10': [11,128,67],   '11': [213,0,0],
+  '1':  '#7986cb', '2':  '#33b679', '3':  '#8e24aa',
+  '4':  '#e67c73', '5':  '#f6bf26', '6':  '#f28b1e',
+  '7':  '#039be5', '8':  '#616161', '9':  '#3f51b5',
+  '10': '#0b8043', '11': '#d50000',
 };
 
-function hexToRgb(hex) {
-  const r = parseInt(hex.slice(1,3),16), g = parseInt(hex.slice(3,5),16), b = parseInt(hex.slice(5,7),16);
-  return [r, g, b];
-}
+const GCAL_LABELS = {
+  '1':'ラベンダー','2':'セージ','3':'ぶどう',
+  '4':'フラミンゴ','5':'バナナ','6':'みかん',
+  '7':'ピーコック','8':'グラファイト','9':'ブルーベリー',
+  '10':'バジル','11':'トマト',
+};
 
-function closestColorId(hex) {
-  const [r,g,b] = hexToRgb(hex);
-  let best = '1', bestDist = Infinity;
-  for (const [id, [cr,cg,cb]] of Object.entries(GCAL_COLORS)) {
-    const dist = (r-cr)**2 + (g-cg)**2 + (b-cb)**2;
-    if (dist < bestDist) { bestDist = dist; best = id; }
+function colorToId(hex) {
+  for (const [id, h] of Object.entries(GCAL_COLORS)) {
+    if (h === hex) return id;
   }
-  return best;
+  return '6';
 }
 
 let shifts = JSON.parse(localStorage.getItem('shifts') || 'null') || DEFAULT_SHIFTS;
@@ -766,7 +798,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
         },
         body: JSON.stringify({
           summary: shift.name,
-          colorId: closestColorId(shift.color),
+          colorId: colorToId(shift.color),
           start: {
             dateTime: `${dateStr}T${shift.start}:00`,
             timeZone: 'Asia/Tokyo',
@@ -879,7 +911,14 @@ function renderModal() {
   const list = document.getElementById('modalShiftList');
   list.innerHTML = shifts.map((s, i) => `
     <div class="modal-shift-item" data-index="${i}">
-      <input type="color" value="${s.color}" data-field="color">
+      <div class="color-picker-wrap">
+        <div class="color-current" style="background:${s.color}" data-index="${i}" data-color="${s.color}"></div>
+        <div class="color-dropdown" data-index="${i}">
+          ${Object.entries(GCAL_COLORS).map(([id, hex]) =>
+            `<div class="color-swatch${hex === s.color ? ' selected' : ''}" style="background:${hex}" data-hex="${hex}" title="${GCAL_LABELS[id]}"></div>`
+          ).join('')}
+        </div>
+      </div>
       <input type="text" value="${s.name}" data-field="name" placeholder="名前">
       <input type="time" value="${s.start}" data-field="start">
       <span style="color:#5f6368">〜</span>
@@ -887,6 +926,35 @@ function renderModal() {
       <button class="delete-btn" data-index="${i}">×</button>
     </div>
   `).join('');
+
+  list.querySelectorAll('.color-current').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      list.querySelectorAll('.color-dropdown').forEach(d => d.classList.remove('open'));
+      el.nextElementSibling.classList.toggle('open');
+    });
+  });
+
+  list.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const dropdown = sw.parentElement;
+      const idx = dropdown.dataset.index;
+      const hex = sw.dataset.hex;
+      const current = dropdown.previousElementSibling;
+      current.style.background = hex;
+      current.dataset.color = hex;
+      dropdown.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('selected'));
+      sw.classList.add('selected');
+      dropdown.classList.remove('open');
+      shifts[idx].color = hex;
+      saveShifts();
+    });
+  });
+
+  document.addEventListener('click', () => {
+    list.querySelectorAll('.color-dropdown').forEach(d => d.classList.remove('open'));
+  }, { once: true });
 
   list.querySelectorAll('.delete-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -904,7 +972,8 @@ function saveFromModal() {
       shifts[i].name = item.querySelector('[data-field="name"]').value || shifts[i].name;
       shifts[i].start = item.querySelector('[data-field="start"]').value || shifts[i].start;
       shifts[i].end = item.querySelector('[data-field="end"]').value || shifts[i].end;
-      shifts[i].color = item.querySelector('[data-field="color"]').value || shifts[i].color;
+      const colorEl = item.querySelector('.color-current');
+      if (colorEl) shifts[i].color = colorEl.dataset.color || shifts[i].color;
     }
   });
   saveShifts();
