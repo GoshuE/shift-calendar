@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#1a73e8">
+<meta name="theme-color" content="#ee5a89">
 <title>しふとん ~シフト登録くん~</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -14,13 +14,13 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
-  background: #f0f2f5;
+  background: #fff0f5;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 .header {
-  background: #1a73e8;
+  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
   color: white;
   padding: 16px 20px;
   font-size: 18px;
@@ -61,7 +61,7 @@ body {
 .section-label {
   font-size: 13px;
   font-weight: 600;
-  color: #5f6368;
+  color: #d4738b;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -73,7 +73,8 @@ body {
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
-  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  box-shadow: 0 2px 8px rgba(238,90,137,0.12);
+  border: 1px solid #fce4ec;
 }
 
 .date-nav {
@@ -87,13 +88,13 @@ body {
   background: none;
   border: none;
   font-size: 24px;
-  color: #1a73e8;
+  color: #ee5a89;
   padding: 8px 12px;
   cursor: pointer;
   border-radius: 50%;
 }
 
-.date-nav button:active { background: #e8f0fe; }
+.date-nav button:active { background: #fce4ec; }
 
 .date-nav .month-label {
   font-size: 16px;
@@ -116,7 +117,7 @@ body {
 }
 
 .calendar-grid .dow:first-child { color: #d93025; }
-.calendar-grid .dow:last-child { color: #1a73e8; }
+.calendar-grid .dow:last-child { color: #ee5a89; }
 
 .calendar-grid .day {
   aspect-ratio: 1;
@@ -131,29 +132,29 @@ body {
   font-weight: 400;
 }
 
-.calendar-grid .day:active { background: #e8f0fe; }
+.calendar-grid .day:active { background: #fce4ec; }
 .calendar-grid .day.empty { cursor: default; }
-.calendar-grid .day.today { font-weight: 700; color: #1a73e8; }
+.calendar-grid .day.today { font-weight: 700; color: #ee5a89; }
 
 .calendar-grid .day.selected {
-  background: #1a73e8;
+  background: #ee5a89;
   color: white;
   font-weight: 600;
 }
 
 .calendar-grid .day.range {
-  background: #e8f0fe;
+  background: #fce4ec;
   border-radius: 0;
 }
 
 .calendar-grid .day.range-start {
-  background: #1a73e8;
+  background: #ee5a89;
   color: white;
   border-radius: 50% 0 0 50%;
 }
 
 .calendar-grid .day.range-end {
-  background: #1a73e8;
+  background: #ee5a89;
   color: white;
   border-radius: 0 50% 50% 0;
 }
@@ -163,7 +164,7 @@ body {
 }
 
 .calendar-grid .day.sunday { color: #d93025; }
-.calendar-grid .day.saturday { color: #1a73e8; }
+.calendar-grid .day.saturday { color: #ee5a89; }
 .calendar-grid .day.selected.sunday,
 .calendar-grid .day.selected.saturday,
 .calendar-grid .day.range-start,
@@ -181,7 +182,7 @@ body {
 
 .mode-toggle {
   display: flex;
-  background: #e8eaed;
+  background: #fce4ec;
   border-radius: 12px;
   padding: 3px;
   margin-bottom: 20px;
@@ -194,7 +195,7 @@ body {
   padding: 10px;
   font-size: 13px;
   font-weight: 500;
-  color: #5f6368;
+  color: #c06080;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
@@ -217,12 +218,13 @@ body {
   display: flex;
   align-items: center;
   background: white;
-  border: 2px solid #e8eaed;
+  border: 2px solid #fce4ec;
   border-radius: 16px;
   padding: 16px 20px;
   cursor: pointer;
   transition: all 0.15s;
   gap: 14px;
+  box-shadow: 0 2px 8px rgba(238,90,137,0.08);
 }
 
 .shift-btn:active { transform: scale(0.98); }
@@ -256,7 +258,7 @@ body {
 .register-btn {
   width: 100%;
   padding: 16px;
-  background: #1a73e8;
+  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
   color: white;
   border: none;
   border-radius: 16px;
@@ -264,17 +266,17 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 2px 8px rgba(26,115,232,0.3);
+  box-shadow: 0 2px 8px rgba(238,90,137,0.3);
 }
 
 .register-btn:active {
   transform: scale(0.98);
-  background: #1557b0;
+  background: linear-gradient(135deg, #ee5a89, #d94a79);
 }
 
 .register-btn:disabled {
-  background: #dadce0;
-  color: #80868b;
+  background: #f0c0d0;
+  color: #d89aaa;
   box-shadow: none;
   transform: none;
 }
@@ -282,7 +284,7 @@ body {
 .progress-bar {
   width: 100%;
   height: 4px;
-  background: #e8eaed;
+  background: #fce4ec;
   border-radius: 2px;
   margin-top: 12px;
   overflow: hidden;
@@ -293,7 +295,7 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background: #1a73e8;
+  background: #ee5a89;
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -313,7 +315,7 @@ body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: #323232;
+  background: #ee5a89;
   color: white;
   padding: 12px 24px;
   border-radius: 12px;
@@ -337,8 +339,8 @@ body {
   height: 48px;
   border-radius: 50%;
   background: white;
-  border: none;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 1px solid #fce4ec;
+  box-shadow: 0 2px 8px rgba(238,90,137,0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -346,8 +348,8 @@ body {
   z-index: 100;
 }
 
-.settings-btn svg { width: 22px; height: 22px; fill: #5f6368; }
-.settings-btn:active { background: #f0f2f5; }
+.settings-btn svg { width: 22px; height: 22px; fill: #ee5a89; }
+.settings-btn:active { background: #fff0f5; }
 
 .modal-overlay {
   position: fixed;
@@ -362,7 +364,7 @@ body {
 .modal-overlay.show { display: flex; }
 
 .modal {
-  background: white;
+  background: #fffafc;
   border-radius: 20px 20px 0 0;
   width: 100%;
   max-width: 480px;
@@ -455,8 +457,8 @@ body {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
-  background: #e8f0fe;
-  color: #1a73e8;
+  background: #fce4ec;
+  color: #ee5a89;
   border: none;
   border-radius: 12px;
   font-size: 14px;
@@ -468,7 +470,7 @@ body {
   width: 100%;
   padding: 14px;
   margin-top: 12px;
-  background: #1a73e8;
+  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
   color: white;
   border: none;
   border-radius: 12px;
