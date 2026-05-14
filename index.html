@@ -8,6 +8,7 @@
 <meta name="theme-color" content="#1a73e8">
 <title>シフト登録</title>
 <link rel="manifest" href="manifest.json">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 
@@ -33,6 +34,27 @@ body {
 }
 
 .header svg { width: 24px; height: 24px; fill: white; }
+
+.header-right {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auth-btn {
+  background: rgba(255,255,255,0.2);
+  border: none;
+  color: white;
+  padding: 6px 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.auth-btn:active { background: rgba(255,255,255,0.3); }
+.auth-btn.signed-in { background: rgba(255,255,255,0.15); font-size: 11px; }
 
 .container { padding: 16px; max-width: 480px; margin: 0 auto; }
 
@@ -203,9 +225,7 @@ body {
   gap: 14px;
 }
 
-.shift-btn:active {
-  transform: scale(0.98);
-}
+.shift-btn:active { transform: scale(0.98); }
 
 .shift-btn.selected {
   border-color: var(--shift-color);
@@ -258,6 +278,35 @@ body {
   box-shadow: none;
   transform: none;
 }
+
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: #e8eaed;
+  border-radius: 2px;
+  margin-top: 12px;
+  overflow: hidden;
+  display: none;
+}
+
+.progress-bar.active { display: block; }
+
+.progress-bar-fill {
+  height: 100%;
+  background: #1a73e8;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.progress-text {
+  text-align: center;
+  font-size: 13px;
+  color: #5f6368;
+  margin-top: 8px;
+  display: none;
+}
+
+.progress-text.active { display: block; }
 
 .toast {
   position: fixed;
@@ -401,15 +450,18 @@ body {
 <div class="header">
   <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
   シフト登録
+  <div class="header-right">
+    <button class="auth-btn" id="authBtn">ログイン</button>
+  </div>
 </div>
 
 <div class="container">
   <div class="section-label">日付を選択</div>
   <div class="date-picker-wrap">
     <div class="date-nav">
-      <button id="prevMonth">‹</button>
+      <button id="prevMonth">&#8249;</button>
       <span class="month-label" id="monthLabel"></span>
-      <button id="nextMonth">›</button>
+      <button id="nextMonth">&#8250;</button>
     </div>
     <div class="calendar-grid" id="calendarGrid"></div>
     <div class="selection-info" id="selectionInfo">日付をタップして選択</div>
@@ -424,22 +476,11 @@ body {
   <div class="shift-buttons" id="shiftButtons"></div>
 
   <button class="register-btn" id="registerBtn" disabled>Googleカレンダーに登録</button>
+  <div class="progress-bar" id="progressBar"><div class="progress-bar-fill" id="progressFill"></div></div>
+  <div class="progress-text" id="progressText"></div>
 </div>
 
 <div class="toast" id="toast"></div>
-
-<div class="modal-overlay" id="queueOverlay">
-  <div class="modal" style="text-align:center;">
-    <div id="queueProgress" style="font-size:13px;color:#5f6368;margin-bottom:8px;"></div>
-    <div id="queueDate" style="font-size:22px;font-weight:700;color:#202124;margin-bottom:4px;"></div>
-    <div id="queueShift" style="font-size:15px;color:#5f6368;margin-bottom:20px;"></div>
-    <button class="register-btn" id="queueOpenBtn" style="margin-bottom:10px;">カレンダーに登録</button>
-    <div style="display:flex;gap:10px;margin-top:4px;">
-      <button class="register-btn" id="queueSkipBtn" style="background:#e8eaed;color:#5f6368;box-shadow:none;flex:1;font-size:14px;">スキップ</button>
-      <button class="register-btn" id="queueCancelBtn" style="background:#fce8e6;color:#d93025;box-shadow:none;flex:1;font-size:14px;">中止</button>
-    </div>
-  </div>
-</div>
 
 <button class="settings-btn" id="settingsBtn">
   <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
@@ -455,6 +496,11 @@ body {
 </div>
 
 <script>
+const CLIENT_ID = '1051838677110-piv0se3763lgiock79vj641vcprkni43.apps.googleusercontent.com';
+const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+let tokenClient;
+let accessToken = null;
+
 const DEFAULT_SHIFTS = [
   { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#ea8600' },
   { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#7b1fa2' },
@@ -470,6 +516,52 @@ let currentYear, currentMonth;
 const today = new Date();
 currentYear = today.getFullYear();
 currentMonth = today.getMonth();
+
+function initGIS() {
+  tokenClient = google.accounts.oauth2.initTokenClient({
+    client_id: CLIENT_ID,
+    scope: SCOPES,
+    callback: (response) => {
+      if (response.access_token) {
+        accessToken = response.access_token;
+        updateAuthUI();
+        showToast('ログインしました');
+      }
+    },
+  });
+}
+
+window.addEventListener('load', () => {
+  const check = setInterval(() => {
+    if (typeof google !== 'undefined' && google.accounts) {
+      clearInterval(check);
+      initGIS();
+    }
+  }, 100);
+});
+
+function updateAuthUI() {
+  const btn = document.getElementById('authBtn');
+  if (accessToken) {
+    btn.textContent = 'ログイン中';
+    btn.classList.add('signed-in');
+  } else {
+    btn.textContent = 'ログイン';
+    btn.classList.remove('signed-in');
+  }
+  updateRegisterBtn();
+}
+
+document.getElementById('authBtn').addEventListener('click', () => {
+  if (accessToken) {
+    google.accounts.oauth2.revoke(accessToken);
+    accessToken = null;
+    updateAuthUI();
+    showToast('ログアウトしました');
+  } else {
+    tokenClient.requestAccessToken();
+  }
+});
 
 function saveShifts() {
   localStorage.setItem('shifts', JSON.stringify(shifts));
@@ -600,79 +692,109 @@ function formatDisplayDate(dateStr) {
 
 function updateRegisterBtn() {
   const btn = document.getElementById('registerBtn');
-  btn.disabled = !(selectedDates.length > 0 && selectedShift);
-  if (!btn.disabled) {
+  const hasSelection = selectedDates.length > 0 && selectedShift;
+  btn.disabled = !hasSelection;
+  if (hasSelection) {
     const shift = shifts.find(s => s.id === selectedShift);
-    btn.textContent = `${shift.name} × ${selectedDates.length}日 登録`;
+    if (accessToken) {
+      btn.textContent = `${shift.name} × ${selectedDates.length}日 一括登録`;
+    } else {
+      btn.textContent = `${shift.name} × ${selectedDates.length}日 登録（要ログイン）`;
+    }
   } else {
     btn.textContent = 'Googleカレンダーに登録';
   }
 }
 
-let queue = [];
-let queueIndex = 0;
-
-document.getElementById('registerBtn').addEventListener('click', () => {
+document.getElementById('registerBtn').addEventListener('click', async () => {
   if (!selectedShift || selectedDates.length === 0) return;
-  const shift = shifts.find(s => s.id === selectedShift);
-  queue = selectedDates.sort().map(d => ({ date: d, shift }));
-  queueIndex = 0;
-  showQueueItem();
-});
 
-function showQueueItem() {
-  if (queueIndex >= queue.length) {
-    document.getElementById('queueOverlay').classList.remove('show');
-    showToast(`${queueIndex}件の登録が完了しました`);
+  if (!accessToken) {
+    tokenClient.requestAccessToken();
+    return;
+  }
+
+  const shift = shifts.find(s => s.id === selectedShift);
+  const dates = [...selectedDates].sort();
+  const btn = document.getElementById('registerBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+
+  btn.disabled = true;
+  btn.textContent = '登録中...';
+  progressBar.classList.add('active');
+  progressText.classList.add('active');
+
+  let success = 0;
+  let failed = 0;
+
+  for (let i = 0; i < dates.length; i++) {
+    const dateStr = dates[i];
+    const pct = ((i + 1) / dates.length * 100).toFixed(0);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = `${i + 1} / ${dates.length} 件処理中...`;
+
+    try {
+      const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          summary: shift.name,
+          start: {
+            dateTime: `${dateStr}T${shift.start}:00`,
+            timeZone: 'Asia/Tokyo',
+          },
+          end: {
+            dateTime: `${dateStr}T${shift.end}:00`,
+            timeZone: 'Asia/Tokyo',
+          },
+        }),
+      });
+
+      if (resp.ok) {
+        success++;
+      } else if (resp.status === 401) {
+        accessToken = null;
+        updateAuthUI();
+        showToast('セッション切れ。再ログインしてください');
+        break;
+      } else {
+        failed++;
+      }
+    } catch (e) {
+      failed++;
+    }
+  }
+
+  progressBar.classList.remove('active');
+  progressText.classList.remove('active');
+  progressFill.style.width = '0%';
+
+  if (success > 0) {
+    showToast(`${success}件登録しました` + (failed > 0 ? `（${failed}件失敗）` : ''));
     selectedDates = [];
     selectedShift = null;
     document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('selected'));
     renderCalendar();
     updateSelectionInfo();
-    updateRegisterBtn();
-    return;
+  } else if (failed > 0) {
+    showToast(`登録に失敗しました（${failed}件）`);
   }
-  const item = queue[queueIndex];
-  const d = new Date(item.date + 'T00:00:00');
-  const dow = ['日','月','火','水','木','金','土'][d.getDay()];
-  document.getElementById('queueProgress').textContent = `${queueIndex + 1} / ${queue.length}`;
-  document.getElementById('queueDate').textContent = `${d.getMonth()+1}/${d.getDate()}（${dow}）`;
-  document.getElementById('queueShift').textContent = `${item.shift.name}  ${item.shift.start}〜${item.shift.end}`;
-  document.getElementById('queueOverlay').classList.add('show');
-}
 
-document.getElementById('queueOpenBtn').addEventListener('click', () => {
-  const item = queue[queueIndex];
-  openGoogleCalendar(item.date, item.shift);
-  queueIndex++;
-  showQueueItem();
+  updateRegisterBtn();
 });
-
-document.getElementById('queueSkipBtn').addEventListener('click', () => {
-  queueIndex++;
-  showQueueItem();
-});
-
-document.getElementById('queueCancelBtn').addEventListener('click', () => {
-  document.getElementById('queueOverlay').classList.remove('show');
-  showToast(`${queueIndex}件登録済み、残りはキャンセルしました`);
-});
-
-function openGoogleCalendar(dateStr, shift) {
-  const startDT = dateStr.replace(/-/g, '') + 'T' + shift.start.replace(':', '') + '00';
-  const endDT = dateStr.replace(/-/g, '') + 'T' + shift.end.replace(':', '') + '00';
-  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(shift.name)}&dates=${startDT}/${endDT}&sf=true`;
-  window.open(url, '_blank');
-}
 
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
+  setTimeout(() => t.classList.remove('show'), 3000);
 }
 
-// Mode toggle
 document.querySelectorAll('.mode-toggle button').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
@@ -686,7 +808,6 @@ document.querySelectorAll('.mode-toggle button').forEach(btn => {
   });
 });
 
-// Month nav
 document.getElementById('prevMonth').addEventListener('click', () => {
   currentMonth--;
   if (currentMonth < 0) { currentMonth = 11; currentYear--; }
@@ -698,7 +819,6 @@ document.getElementById('nextMonth').addEventListener('click', () => {
   renderCalendar();
 });
 
-// Settings modal
 document.getElementById('settingsBtn').addEventListener('click', () => {
   renderModal();
   document.getElementById('modalOverlay').classList.add('show');
@@ -767,7 +887,6 @@ function saveFromModal() {
   saveShifts();
 }
 
-// Init
 renderCalendar();
 renderShiftButtons();
 </script>
