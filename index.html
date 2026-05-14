@@ -428,6 +428,19 @@ body {
 
 <div class="toast" id="toast"></div>
 
+<div class="modal-overlay" id="queueOverlay">
+  <div class="modal" style="text-align:center;">
+    <div id="queueProgress" style="font-size:13px;color:#5f6368;margin-bottom:8px;"></div>
+    <div id="queueDate" style="font-size:22px;font-weight:700;color:#202124;margin-bottom:4px;"></div>
+    <div id="queueShift" style="font-size:15px;color:#5f6368;margin-bottom:20px;"></div>
+    <button class="register-btn" id="queueOpenBtn" style="margin-bottom:10px;">カレンダーに登録</button>
+    <div style="display:flex;gap:10px;margin-top:4px;">
+      <button class="register-btn" id="queueSkipBtn" style="background:#e8eaed;color:#5f6368;box-shadow:none;flex:1;font-size:14px;">スキップ</button>
+      <button class="register-btn" id="queueCancelBtn" style="background:#fce8e6;color:#d93025;box-shadow:none;flex:1;font-size:14px;">中止</button>
+    </div>
+  </div>
+</div>
+
 <button class="settings-btn" id="settingsBtn">
   <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
 </button>
@@ -596,15 +609,53 @@ function updateRegisterBtn() {
   }
 }
 
+let queue = [];
+let queueIndex = 0;
+
 document.getElementById('registerBtn').addEventListener('click', () => {
   if (!selectedShift || selectedDates.length === 0) return;
   const shift = shifts.find(s => s.id === selectedShift);
-  selectedDates.sort().forEach((dateStr, i) => {
-    setTimeout(() => {
-      openGoogleCalendar(dateStr, shift);
-    }, i * 400);
-  });
-  showToast(`${selectedDates.length}件のカレンダーを開いています…`);
+  queue = selectedDates.sort().map(d => ({ date: d, shift }));
+  queueIndex = 0;
+  showQueueItem();
+});
+
+function showQueueItem() {
+  if (queueIndex >= queue.length) {
+    document.getElementById('queueOverlay').classList.remove('show');
+    showToast(`${queueIndex}件の登録が完了しました`);
+    selectedDates = [];
+    selectedShift = null;
+    document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('selected'));
+    renderCalendar();
+    updateSelectionInfo();
+    updateRegisterBtn();
+    return;
+  }
+  const item = queue[queueIndex];
+  const d = new Date(item.date + 'T00:00:00');
+  const dow = ['日','月','火','水','木','金','土'][d.getDay()];
+  document.getElementById('queueProgress').textContent = `${queueIndex + 1} / ${queue.length}`;
+  document.getElementById('queueDate').textContent = `${d.getMonth()+1}/${d.getDate()}（${dow}）`;
+  document.getElementById('queueShift').textContent = `${item.shift.name}  ${item.shift.start}〜${item.shift.end}`;
+  document.getElementById('queueOverlay').classList.add('show');
+}
+
+document.getElementById('queueOpenBtn').addEventListener('click', () => {
+  const item = queue[queueIndex];
+  openGoogleCalendar(item.date, item.shift);
+  queueIndex++;
+  showQueueItem();
+});
+
+document.getElementById('queueSkipBtn').addEventListener('click', () => {
+  queueIndex++;
+  showQueueItem();
+});
+
+document.getElementById('queueCancelBtn').addEventListener('click', () => {
+  document.getElementById('queueOverlay').classList.remove('show');
+  showToast(`${queueIndex}件登録済み、残りはキャンセルしました`);
 });
 
 function openGoogleCalendar(dateStr, shift) {
