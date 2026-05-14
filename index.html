@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#1a73e8">
+<title>シフト登録</title>
+<link rel="manifest" href="manifest.json">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
+  background: #f0f2f5;
+  min-height: 100vh;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.header {
+  background: #1a73e8;
+  color: white;
+  padding: 16px 20px;
+  font-size: 18px;
+  font-weight: 600;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.header svg { width: 24px; height: 24px; fill: white; }
+
+.container { padding: 16px; max-width: 480px; margin: 0 auto; }
+
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #5f6368;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+
+.date-picker-wrap {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+.date-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.date-nav button {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #1a73e8;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 50%;
+}
+
+.date-nav button:active { background: #e8f0fe; }
+
+.date-nav .month-label {
+  font-size: 16px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.calendar-grid .dow {
+  font-size: 11px;
+  color: #5f6368;
+  padding: 4px 0;
+  font-weight: 500;
+}
+
+.calendar-grid .dow:first-child { color: #d93025; }
+.calendar-grid .dow:last-child { color: #1a73e8; }
+
+.calendar-grid .day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  position: relative;
+  color: #202124;
+  font-weight: 400;
+}
+
+.calendar-grid .day:active { background: #e8f0fe; }
+.calendar-grid .day.empty { cursor: default; }
+.calendar-grid .day.today { font-weight: 700; color: #1a73e8; }
+
+.calendar-grid .day.selected {
+  background: #1a73e8;
+  color: white;
+  font-weight: 600;
+}
+
+.calendar-grid .day.range {
+  background: #e8f0fe;
+  border-radius: 0;
+}
+
+.calendar-grid .day.range-start {
+  background: #1a73e8;
+  color: white;
+  border-radius: 50% 0 0 50%;
+}
+
+.calendar-grid .day.range-end {
+  background: #1a73e8;
+  color: white;
+  border-radius: 0 50% 50% 0;
+}
+
+.calendar-grid .day.range-start.range-end {
+  border-radius: 50%;
+}
+
+.calendar-grid .day.sunday { color: #d93025; }
+.calendar-grid .day.saturday { color: #1a73e8; }
+.calendar-grid .day.selected.sunday,
+.calendar-grid .day.selected.saturday,
+.calendar-grid .day.range-start,
+.calendar-grid .day.range-end { color: white; }
+
+.selection-info {
+  text-align: center;
+  padding: 8px;
+  font-size: 13px;
+  color: #5f6368;
+  min-height: 34px;
+}
+
+.selection-info strong { color: #202124; }
+
+.mode-toggle {
+  display: flex;
+  background: #e8eaed;
+  border-radius: 12px;
+  padding: 3px;
+  margin-bottom: 20px;
+}
+
+.mode-toggle button {
+  flex: 1;
+  border: none;
+  background: none;
+  padding: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #5f6368;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.mode-toggle button.active {
+  background: white;
+  color: #202124;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.shift-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.shift-btn {
+  display: flex;
+  align-items: center;
+  background: white;
+  border: 2px solid #e8eaed;
+  border-radius: 16px;
+  padding: 16px 20px;
+  cursor: pointer;
+  transition: all 0.15s;
+  gap: 14px;
+}
+
+.shift-btn:active {
+  transform: scale(0.98);
+}
+
+.shift-btn.selected {
+  border-color: var(--shift-color);
+  background: var(--shift-bg);
+}
+
+.shift-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.shift-btn-info { flex: 1; }
+
+.shift-btn-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.shift-btn-time {
+  font-size: 13px;
+  color: #5f6368;
+  margin-top: 2px;
+}
+
+.register-btn {
+  width: 100%;
+  padding: 16px;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(26,115,232,0.3);
+}
+
+.register-btn:active {
+  transform: scale(0.98);
+  background: #1557b0;
+}
+
+.register-btn:disabled {
+  background: #dadce0;
+  color: #80868b;
+  box-shadow: none;
+  transform: none;
+}
+
+.toast {
+  position: fixed;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  background: #323232;
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 14px;
+  z-index: 200;
+  opacity: 0;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+  opacity: 1;
+}
+
+.settings-btn {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: white;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.settings-btn svg { width: 22px; height: 22px; fill: #5f6368; }
+.settings-btn:active { background: #f0f2f5; }
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  z-index: 300;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.modal-overlay.show { display: flex; }
+
+.modal {
+  background: white;
+  border-radius: 20px 20px 0 0;
+  width: 100%;
+  max-width: 480px;
+  max-height: 80vh;
+  overflow-y: auto;
+  padding: 20px;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.modal h3 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  color: #202124;
+}
+
+.modal-shift-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.modal-shift-item input {
+  border: 1px solid #dadce0;
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+  font-family: inherit;
+}
+
+.modal-shift-item input[type="text"] { width: 80px; }
+.modal-shift-item input[type="time"] { width: 110px; }
+.modal-shift-item input[type="color"] {
+  width: 36px; height: 36px;
+  border: none; padding: 0;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.modal-shift-item .delete-btn {
+  background: none;
+  border: none;
+  color: #d93025;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  margin-left: auto;
+}
+
+.modal .add-btn {
+  width: 100%;
+  padding: 12px;
+  margin-top: 12px;
+  background: #e8f0fe;
+  color: #1a73e8;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.modal .close-btn {
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  background: #1a73e8;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+  シフト登録
+</div>
+
+<div class="container">
+  <div class="section-label">日付を選択</div>
+  <div class="date-picker-wrap">
+    <div class="date-nav">
+      <button id="prevMonth">‹</button>
+      <span class="month-label" id="monthLabel"></span>
+      <button id="nextMonth">›</button>
+    </div>
+    <div class="calendar-grid" id="calendarGrid"></div>
+    <div class="selection-info" id="selectionInfo">日付をタップして選択</div>
+  </div>
+
+  <div class="mode-toggle">
+    <button class="active" data-mode="single" id="modeSingle">1日ずつ</button>
+    <button data-mode="range" id="modeRange">範囲選択</button>
+  </div>
+
+  <div class="section-label">シフトを選択</div>
+  <div class="shift-buttons" id="shiftButtons"></div>
+
+  <button class="register-btn" id="registerBtn" disabled>Googleカレンダーに登録</button>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<button class="settings-btn" id="settingsBtn">
+  <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.6 3.6 0 0112 15.6z"/></svg>
+</button>
+
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <h3>シフト設定</h3>
+    <div id="modalShiftList"></div>
+    <button class="add-btn" id="addShiftBtn">+ シフトを追加</button>
+    <button class="close-btn" id="closeModalBtn">保存して閉じる</button>
+  </div>
+</div>
+
+<script>
+const DEFAULT_SHIFTS = [
+  { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#ea8600' },
+  { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#7b1fa2' },
+];
+
+let shifts = JSON.parse(localStorage.getItem('shifts') || 'null') || DEFAULT_SHIFTS;
+let selectionMode = 'single';
+let selectedDates = [];
+let rangeStart = null;
+let selectedShift = null;
+let currentYear, currentMonth;
+
+const today = new Date();
+currentYear = today.getFullYear();
+currentMonth = today.getMonth();
+
+function saveShifts() {
+  localStorage.setItem('shifts', JSON.stringify(shifts));
+}
+
+function renderShiftButtons() {
+  const container = document.getElementById('shiftButtons');
+  container.innerHTML = shifts.map(s => `
+    <div class="shift-btn" data-id="${s.id}"
+         style="--shift-color:${s.color}; --shift-bg:${s.color}18;">
+      <div class="shift-dot" style="background:${s.color}"></div>
+      <div class="shift-btn-info">
+        <div class="shift-btn-name">${s.name}</div>
+        <div class="shift-btn-time">${s.start} 〜 ${s.end}</div>
+      </div>
+    </div>
+  `).join('');
+
+  container.querySelectorAll('.shift-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      if (selectedShift === id) {
+        selectedShift = null;
+        btn.classList.remove('selected');
+      } else {
+        selectedShift = id;
+        container.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      }
+      updateRegisterBtn();
+    });
+  });
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calendarGrid');
+  const label = document.getElementById('monthLabel');
+  label.textContent = `${currentYear}年${currentMonth + 1}月`;
+
+  const dows = ['日','月','火','水','木','金','土'];
+  let html = dows.map((d, i) => `<div class="dow">${d}</div>`).join('');
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+
+  for (let i = 0; i < firstDay; i++) html += '<div class="day empty"></div>';
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dateStr = formatDate(date);
+    const dow = date.getDay();
+    const isToday = dateStr === formatDate(today);
+    const isSelected = selectedDates.includes(dateStr);
+
+    let classes = ['day'];
+    if (isToday) classes.push('today');
+    if (dow === 0) classes.push('sunday');
+    if (dow === 6) classes.push('saturday');
+
+    if (selectionMode === 'range' && selectedDates.length > 1) {
+      const idx = selectedDates.indexOf(dateStr);
+      if (idx === 0) classes.push('range-start');
+      else if (idx === selectedDates.length - 1) classes.push('range-end');
+      else if (idx > 0) classes.push('range');
+    } else if (isSelected) {
+      classes.push('selected');
+    }
+
+    html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${d}</div>`;
+  }
+
+  grid.innerHTML = html;
+
+  grid.querySelectorAll('.day:not(.empty)').forEach(el => {
+    el.addEventListener('click', () => onDayClick(el.dataset.date));
+  });
+}
+
+function formatDate(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function onDayClick(dateStr) {
+  if (selectionMode === 'single') {
+    const idx = selectedDates.indexOf(dateStr);
+    if (idx >= 0) {
+      selectedDates.splice(idx, 1);
+    } else {
+      selectedDates.push(dateStr);
+    }
+  } else {
+    if (!rangeStart) {
+      rangeStart = dateStr;
+      selectedDates = [dateStr];
+    } else {
+      const start = rangeStart < dateStr ? rangeStart : dateStr;
+      const end = rangeStart < dateStr ? dateStr : rangeStart;
+      selectedDates = [];
+      let cur = new Date(start + 'T00:00:00');
+      const endD = new Date(end + 'T00:00:00');
+      while (cur <= endD) {
+        selectedDates.push(formatDate(cur));
+        cur.setDate(cur.getDate() + 1);
+      }
+      rangeStart = null;
+    }
+  }
+  renderCalendar();
+  updateSelectionInfo();
+  updateRegisterBtn();
+}
+
+function updateSelectionInfo() {
+  const el = document.getElementById('selectionInfo');
+  if (selectedDates.length === 0) {
+    el.innerHTML = '日付をタップして選択';
+  } else if (selectionMode === 'range' && rangeStart && selectedDates.length === 1) {
+    el.innerHTML = `<strong>${formatDisplayDate(rangeStart)}</strong> 〜 終了日をタップ`;
+  } else {
+    el.innerHTML = `<strong>${selectedDates.length}日</strong> 選択中`;
+  }
+}
+
+function formatDisplayDate(dateStr) {
+  const d = new Date(dateStr + 'T00:00:00');
+  return `${d.getMonth()+1}/${d.getDate()}`;
+}
+
+function updateRegisterBtn() {
+  const btn = document.getElementById('registerBtn');
+  btn.disabled = !(selectedDates.length > 0 && selectedShift);
+  if (!btn.disabled) {
+    const shift = shifts.find(s => s.id === selectedShift);
+    btn.textContent = `${shift.name} × ${selectedDates.length}日 登録`;
+  } else {
+    btn.textContent = 'Googleカレンダーに登録';
+  }
+}
+
+document.getElementById('registerBtn').addEventListener('click', () => {
+  if (!selectedShift || selectedDates.length === 0) return;
+  const shift = shifts.find(s => s.id === selectedShift);
+  selectedDates.sort().forEach((dateStr, i) => {
+    setTimeout(() => {
+      openGoogleCalendar(dateStr, shift);
+    }, i * 400);
+  });
+  showToast(`${selectedDates.length}件のカレンダーを開いています…`);
+});
+
+function openGoogleCalendar(dateStr, shift) {
+  const startDT = dateStr.replace(/-/g, '') + 'T' + shift.start.replace(':', '') + '00';
+  const endDT = dateStr.replace(/-/g, '') + 'T' + shift.end.replace(':', '') + '00';
+  const url = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(shift.name)}&dates=${startDT}/${endDT}&sf=true`;
+  window.open(url, '_blank');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// Mode toggle
+document.querySelectorAll('.mode-toggle button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.mode-toggle button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectionMode = btn.dataset.mode;
+    selectedDates = [];
+    rangeStart = null;
+    renderCalendar();
+    updateSelectionInfo();
+    updateRegisterBtn();
+  });
+});
+
+// Month nav
+document.getElementById('prevMonth').addEventListener('click', () => {
+  currentMonth--;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  renderCalendar();
+});
+document.getElementById('nextMonth').addEventListener('click', () => {
+  currentMonth++;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+});
+
+// Settings modal
+document.getElementById('settingsBtn').addEventListener('click', () => {
+  renderModal();
+  document.getElementById('modalOverlay').classList.add('show');
+});
+
+document.getElementById('closeModalBtn').addEventListener('click', () => {
+  saveFromModal();
+  document.getElementById('modalOverlay').classList.remove('show');
+  renderShiftButtons();
+  selectedShift = null;
+  updateRegisterBtn();
+});
+
+document.getElementById('modalOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    saveFromModal();
+    e.currentTarget.classList.remove('show');
+    renderShiftButtons();
+  }
+});
+
+document.getElementById('addShiftBtn').addEventListener('click', () => {
+  shifts.push({
+    id: 'shift_' + Date.now(),
+    name: '新シフト',
+    start: '09:00',
+    end: '18:00',
+    color: '#43a047'
+  });
+  saveShifts();
+  renderModal();
+});
+
+function renderModal() {
+  const list = document.getElementById('modalShiftList');
+  list.innerHTML = shifts.map((s, i) => `
+    <div class="modal-shift-item" data-index="${i}">
+      <input type="color" value="${s.color}" data-field="color">
+      <input type="text" value="${s.name}" data-field="name" placeholder="名前">
+      <input type="time" value="${s.start}" data-field="start">
+      <span style="color:#5f6368">〜</span>
+      <input type="time" value="${s.end}" data-field="end">
+      <button class="delete-btn" data-index="${i}">×</button>
+    </div>
+  `).join('');
+
+  list.querySelectorAll('.delete-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      if (shifts.length <= 1) { showToast('最低1つのシフトが必要です'); return; }
+      shifts.splice(parseInt(btn.dataset.index), 1);
+      saveShifts();
+      renderModal();
+    });
+  });
+}
+
+function saveFromModal() {
+  document.querySelectorAll('.modal-shift-item').forEach((item, i) => {
+    if (shifts[i]) {
+      shifts[i].name = item.querySelector('[data-field="name"]').value || shifts[i].name;
+      shifts[i].start = item.querySelector('[data-field="start"]').value || shifts[i].start;
+      shifts[i].end = item.querySelector('[data-field="end"]').value || shifts[i].end;
+      shifts[i].color = item.querySelector('[data-field="color"]').value || shifts[i].color;
+    }
+  });
+  saveShifts();
+}
+
+// Init
+renderCalendar();
+renderShiftButtons();
+</script>
+</body>
+</html>
