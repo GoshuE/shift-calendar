@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#ee5a89">
+<meta name="theme-color" content="#5aaa5e">
 <title>しふとん ~シフト登録くん~</title>
 <link rel="manifest" href="manifest.json">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -14,13 +14,13 @@
 
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Sans', sans-serif;
-  background: #fff0f5;
+  background: #fefcef;
   min-height: 100vh;
   padding-bottom: env(safe-area-inset-bottom);
 }
 
 .header {
-  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
+  background: linear-gradient(135deg, #7bc67e, #5aaa5e);
   color: white;
   padding: 16px 20px;
   font-size: 18px;
@@ -33,7 +33,59 @@ body {
   gap: 10px;
 }
 
-.header svg { width: 24px; height: 24px; fill: white; }
+.header svg.header-icon { width: 24px; height: 24px; fill: white; }
+.mascot-header { width: 40px; height: 40px; flex-shrink: 0; object-fit: contain; border-radius: 10px; }
+.mascot-hero { display: block; margin: 0 auto 12px; width: 120px; height: 120px; border-radius: 50%; object-fit: cover; }
+
+
+.mascot-welcome {
+  display: block;
+  margin: 0 auto 0;
+  width: 80px;
+  height: 80px;
+  object-fit: contain;
+}
+
+.mascot-section {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  vertical-align: middle;
+  margin-right: 2px;
+}
+
+.mascot-between {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 16px;
+  margin: 4px 0;
+}
+
+.mascot-between img {
+  width: 48px;
+  height: 48px;
+  object-fit: contain;
+  opacity: 0.7;
+}
+
+.mascot-footer {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 8px;
+  padding: 12px 0 28px;
+  opacity: 0.45;
+}
+
+.mascot-footer img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+}
+
+.container { position: relative; overflow: visible; }
 
 .header-right {
   margin-left: auto;
@@ -61,7 +113,7 @@ body {
 .section-label {
   font-size: 13px;
   font-weight: 600;
-  color: #d4738b;
+  color: #6aaa6e;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   margin-bottom: 8px;
@@ -73,8 +125,8 @@ body {
   border-radius: 16px;
   padding: 16px;
   margin-bottom: 20px;
-  box-shadow: 0 2px 8px rgba(238,90,137,0.12);
-  border: 1px solid #fce4ec;
+  box-shadow: 0 2px 8px rgba(90,170,94,0.12);
+  border: 1px solid #e0f0d8;
 }
 
 .date-nav {
@@ -88,13 +140,13 @@ body {
   background: none;
   border: none;
   font-size: 24px;
-  color: #ee5a89;
+  color: #5aaa5e;
   padding: 8px 12px;
   cursor: pointer;
   border-radius: 50%;
 }
 
-.date-nav button:active { background: #fce4ec; }
+.date-nav button:active { background: #e0f0d8; }
 
 .date-nav .month-label {
   font-size: 16px;
@@ -117,7 +169,7 @@ body {
 }
 
 .calendar-grid .dow:first-child { color: #d93025; }
-.calendar-grid .dow:last-child { color: #ee5a89; }
+.calendar-grid .dow:last-child { color: #5aaa5e; }
 
 .calendar-grid .day {
   aspect-ratio: 1;
@@ -132,29 +184,29 @@ body {
   font-weight: 400;
 }
 
-.calendar-grid .day:active { background: #fce4ec; }
+.calendar-grid .day:active { background: #e0f0d8; }
 .calendar-grid .day.empty { cursor: default; }
-.calendar-grid .day.today { font-weight: 700; color: #ee5a89; }
+.calendar-grid .day.today { font-weight: 700; color: #5aaa5e; }
 
 .calendar-grid .day.selected {
-  background: #ee5a89;
+  background: #5aaa5e;
   color: white;
   font-weight: 600;
 }
 
 .calendar-grid .day.range {
-  background: #fce4ec;
+  background: #e0f0d8;
   border-radius: 0;
 }
 
 .calendar-grid .day.range-start {
-  background: #ee5a89;
+  background: #5aaa5e;
   color: white;
   border-radius: 50% 0 0 50%;
 }
 
 .calendar-grid .day.range-end {
-  background: #ee5a89;
+  background: #5aaa5e;
   color: white;
   border-radius: 0 50% 50% 0;
 }
@@ -164,7 +216,7 @@ body {
 }
 
 .calendar-grid .day.sunday { color: #d93025; }
-.calendar-grid .day.saturday { color: #ee5a89; }
+.calendar-grid .day.saturday { color: #5aaa5e; }
 .calendar-grid .day.selected.sunday,
 .calendar-grid .day.selected.saturday,
 .calendar-grid .day.range-start,
@@ -182,7 +234,7 @@ body {
 
 .mode-toggle {
   display: flex;
-  background: #fce4ec;
+  background: #e0f0d8;
   border-radius: 12px;
   padding: 3px;
   margin-bottom: 20px;
@@ -195,7 +247,7 @@ body {
   padding: 10px;
   font-size: 13px;
   font-weight: 500;
-  color: #c06080;
+  color: #5a9a5e;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.2s;
@@ -218,13 +270,13 @@ body {
   display: flex;
   align-items: center;
   background: white;
-  border: 2px solid #fce4ec;
+  border: 2px solid #e0f0d8;
   border-radius: 16px;
   padding: 16px 20px;
   cursor: pointer;
   transition: all 0.15s;
   gap: 14px;
-  box-shadow: 0 2px 8px rgba(238,90,137,0.08);
+  box-shadow: 0 2px 8px rgba(90,170,94,0.08);
 }
 
 .shift-btn:active { transform: scale(0.98); }
@@ -258,7 +310,7 @@ body {
 .register-btn {
   width: 100%;
   padding: 16px;
-  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
+  background: linear-gradient(135deg, #7bc67e, #5aaa5e);
   color: white;
   border: none;
   border-radius: 16px;
@@ -266,17 +318,17 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.15s;
-  box-shadow: 0 2px 8px rgba(238,90,137,0.3);
+  box-shadow: 0 2px 8px rgba(90,170,94,0.3);
 }
 
 .register-btn:active {
   transform: scale(0.98);
-  background: linear-gradient(135deg, #ee5a89, #d94a79);
+  background: linear-gradient(135deg, #5aaa5e, #4a9a4e);
 }
 
 .register-btn:disabled {
-  background: #f0c0d0;
-  color: #d89aaa;
+  background: #c0e0c0;
+  color: #9aba9a;
   box-shadow: none;
   transform: none;
 }
@@ -284,7 +336,7 @@ body {
 .progress-bar {
   width: 100%;
   height: 4px;
-  background: #fce4ec;
+  background: #e0f0d8;
   border-radius: 2px;
   margin-top: 12px;
   overflow: hidden;
@@ -295,7 +347,7 @@ body {
 
 .progress-bar-fill {
   height: 100%;
-  background: #ee5a89;
+  background: #5aaa5e;
   border-radius: 2px;
   transition: width 0.3s ease;
 }
@@ -315,7 +367,7 @@ body {
   bottom: 80px;
   left: 50%;
   transform: translateX(-50%) translateY(100px);
-  background: #ee5a89;
+  background: #5aaa5e;
   color: white;
   padding: 12px 24px;
   border-radius: 12px;
@@ -339,8 +391,8 @@ body {
   height: 48px;
   border-radius: 50%;
   background: white;
-  border: 1px solid #fce4ec;
-  box-shadow: 0 2px 8px rgba(238,90,137,0.15);
+  border: 1px solid #e0f0d8;
+  box-shadow: 0 2px 8px rgba(90,170,94,0.15);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -348,8 +400,8 @@ body {
   z-index: 100;
 }
 
-.settings-btn svg { width: 22px; height: 22px; fill: #ee5a89; }
-.settings-btn:active { background: #fff0f5; }
+.settings-btn svg { width: 22px; height: 22px; fill: #5aaa5e; }
+.settings-btn:active { background: #fefcef; }
 
 .modal-overlay {
   position: fixed;
@@ -457,8 +509,8 @@ body {
   width: 100%;
   padding: 12px;
   margin-top: 12px;
-  background: #fce4ec;
-  color: #ee5a89;
+  background: #e0f0d8;
+  color: #5aaa5e;
   border: none;
   border-radius: 12px;
   font-size: 14px;
@@ -470,7 +522,7 @@ body {
   width: 100%;
   padding: 14px;
   margin-top: 12px;
-  background: linear-gradient(135deg, #ff6b9d, #ee5a89);
+  background: linear-gradient(135deg, #7bc67e, #5aaa5e);
   color: white;
   border: none;
   border-radius: 12px;
@@ -483,7 +535,7 @@ body {
 <body>
 
 <div class="header">
-  <svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg>
+  <img class="mascot-header" src="midorin2.jpg" alt="みどりん">
   しふとん ~シフト登録くん~
   <div class="header-right">
     <button class="auth-btn" id="authBtn">ログイン</button>
@@ -491,7 +543,8 @@ body {
 </div>
 
 <div class="container">
-  <div class="section-label">日付を選択</div>
+  <img class="mascot-welcome" src="midorin-tea.jpg" alt="みどりん">
+  <div class="section-label"><img class="mascot-section" src="midorin-clover.jpg" alt="">日付を選択</div>
   <div class="date-picker-wrap">
     <div class="date-nav">
       <button id="prevMonth">&#8249;</button>
@@ -507,12 +560,28 @@ body {
     <button data-mode="range" id="modeRange">範囲選択</button>
   </div>
 
-  <div class="section-label">シフトを選択</div>
+  <div class="mascot-between">
+    <img src="midorin-umbrella.jpg" alt="">
+    <img src="midorin-tree.jpg" alt="">
+    <img src="midorin-basket.jpg" alt="">
+  </div>
+
+  <div class="section-label"><img class="mascot-section" src="midorin-dango2.jpg" alt="">シフトを選択</div>
   <div class="shift-buttons" id="shiftButtons"></div>
 
   <button class="register-btn" id="registerBtn" disabled>Googleカレンダーに登録</button>
   <div class="progress-bar" id="progressBar"><div class="progress-bar-fill" id="progressFill"></div></div>
   <div class="progress-text" id="progressText"></div>
+</div>
+
+<div class="mascot-footer">
+  <img src="midorin-clover.jpg" alt="">
+  <img src="midorin-front.jpg" alt="">
+  <img src="midorin-dango2.jpg" alt="">
+  <img src="midorin-faces.jpg" alt="">
+  <img src="midorin-side.jpg" alt="">
+  <img src="midorin-back.jpg" alt="">
+  <img src="midorin-tree.jpg" alt="">
 </div>
 
 <div class="toast" id="toast"></div>
