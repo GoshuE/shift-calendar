@@ -591,18 +591,19 @@ body {
   flex-shrink: 0;
 }
 
-/* === Feature 4: Mascot bounce animation === */
-@keyframes mascotBounce {
-  0%   { transform: translateY(0); }
-  20%  { transform: translateY(-12px) rotate(-3deg); }
-  40%  { transform: translateY(0) rotate(0deg); }
-  60%  { transform: translateY(-6px) rotate(2deg); }
-  80%  { transform: translateY(0) rotate(0deg); }
-  100% { transform: translateY(0); }
+/* === Feature 4: Mascot wave bounce animation === */
+@keyframes mascotWaveBounce {
+  0%   { transform: translateY(0) rotate(0deg); }
+  15%  { transform: translateY(-18px) rotate(-4deg); }
+  30%  { transform: translateY(0) rotate(0deg); }
+  45%  { transform: translateY(-10px) rotate(3deg); }
+  65%  { transform: translateY(0) rotate(0deg); }
+  80%  { transform: translateY(-4px) rotate(-1deg); }
+  100% { transform: translateY(0) rotate(0deg); }
 }
 
-.mascot-welcome.bounce {
-  animation: mascotBounce 0.7s ease;
+.mascot-between img.wave-bounce {
+  animation: mascotWaveBounce 0.8s ease;
 }
 
 .modal-overlay {
@@ -1354,12 +1355,16 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     selectedDates = [];
     selectedShift = null;
     document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('selected'));
-    // Feature 4: Mascot bounce animation on success
-    const mascot = document.querySelector('.mascot-welcome');
-    mascot.classList.remove('bounce');
-    void mascot.offsetWidth; // force reflow
-    mascot.classList.add('bounce');
-    mascot.addEventListener('animationend', () => mascot.classList.remove('bounce'), { once: true });
+    // Feature 4: Mascot wave bounce animation on success
+    const mascots = document.querySelectorAll('.mascot-between img');
+    mascots.forEach((img, i) => {
+      img.classList.remove('wave-bounce');
+      void img.offsetWidth; // force reflow
+      setTimeout(() => {
+        img.classList.add('wave-bounce');
+        img.addEventListener('animationend', () => img.classList.remove('wave-bounce'), { once: true });
+      }, i * 150); // 150ms delay between each mascot = wave effect
+    });
     // Feature 1: Refresh events after registration
     fetchCalendarEvents();
     updateSelectionInfo();
