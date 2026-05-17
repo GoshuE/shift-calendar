@@ -408,6 +408,203 @@ body {
 .settings-btn svg { width: 22px; height: 22px; fill: #5aaa5e; }
 .settings-btn:active { background: #fefcef; }
 
+/* === Feature 1: Event dots on calendar === */
+.calendar-grid .day {
+  flex-direction: column;
+  gap: 1px;
+}
+
+.event-dots {
+  display: flex;
+  gap: 2px;
+  justify-content: center;
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.event-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* === Feature 2: Event popup modal === */
+.event-popup-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 250;
+  display: none;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-popup-overlay.show { display: flex; }
+
+.event-popup {
+  background: white;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 360px;
+  padding: 20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  animation: slideUp 0.25s ease;
+}
+
+.event-popup h4 {
+  font-size: 16px;
+  color: #202124;
+  margin-bottom: 12px;
+}
+
+.event-popup-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid #f0f2f5;
+}
+
+.event-popup-item:last-child { border-bottom: none; }
+
+.event-popup-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.event-popup-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.event-popup-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #202124;
+}
+
+.event-popup-time {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 2px;
+}
+
+.event-popup-delete {
+  background: none;
+  border: none;
+  color: #d93025;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.event-popup-delete:active { background: #fce8e6; }
+
+.event-popup-delete svg {
+  width: 18px;
+  height: 18px;
+  fill: #d93025;
+}
+
+.event-popup-close {
+  width: 100%;
+  padding: 10px;
+  margin-top: 12px;
+  background: #e0f0d8;
+  color: #5aaa5e;
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.event-popup-empty {
+  text-align: center;
+  color: #5f6368;
+  font-size: 13px;
+  padding: 12px 0;
+}
+
+/* === Feature 3: Monthly summary === */
+.monthly-summary {
+  background: white;
+  border-radius: 16px;
+  padding: 16px;
+  margin-top: 16px;
+  box-shadow: 0 2px 8px rgba(90,170,94,0.12);
+  border: 1px solid #e0f0d8;
+  display: none;
+}
+
+.monthly-summary.visible { display: block; }
+
+.monthly-summary-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #6aaa6e;
+  margin-bottom: 10px;
+}
+
+.monthly-summary-total {
+  font-size: 20px;
+  font-weight: 700;
+  color: #202124;
+  margin-bottom: 8px;
+}
+
+.monthly-summary-total span {
+  font-size: 13px;
+  font-weight: 400;
+  color: #5f6368;
+}
+
+.monthly-summary-breakdown {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.summary-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: #f8faf6;
+  border-radius: 20px;
+  padding: 6px 12px;
+  font-size: 13px;
+  color: #202124;
+}
+
+.summary-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* === Feature 4: Mascot bounce animation === */
+@keyframes mascotBounce {
+  0%   { transform: translateY(0); }
+  20%  { transform: translateY(-12px) rotate(-3deg); }
+  40%  { transform: translateY(0) rotate(0deg); }
+  60%  { transform: translateY(-6px) rotate(2deg); }
+  80%  { transform: translateY(0) rotate(0deg); }
+  100% { transform: translateY(0); }
+}
+
+.mascot-welcome.bounce {
+  animation: mascotBounce 0.7s ease;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -595,6 +792,20 @@ body {
   <button class="register-btn" id="registerBtn" disabled>Googleカレンダーに登録</button>
   <div class="progress-bar" id="progressBar"><div class="progress-bar-fill" id="progressFill"></div></div>
   <div class="progress-text" id="progressText"></div>
+
+  <div class="monthly-summary" id="monthlySummary">
+    <div class="monthly-summary-title">今月のシフト集計</div>
+    <div class="monthly-summary-total" id="summaryTotal"></div>
+    <div class="monthly-summary-breakdown" id="summaryBreakdown"></div>
+  </div>
+</div>
+
+<div class="event-popup-overlay" id="eventPopupOverlay">
+  <div class="event-popup">
+    <h4 id="eventPopupTitle"></h4>
+    <div id="eventPopupList"></div>
+    <button class="event-popup-close" id="eventPopupClose">閉じる</button>
+  </div>
 </div>
 
 <div class="mascot-footer">
@@ -660,6 +871,7 @@ let selectedDates = [];
 let rangeStart = null;
 let selectedShift = null;
 let currentYear, currentMonth;
+let calendarEvents = [];
 
 const today = new Date();
 currentYear = today.getFullYear();
@@ -693,9 +905,13 @@ function updateAuthUI() {
   if (accessToken) {
     btn.textContent = 'ログイン中';
     btn.classList.add('signed-in');
+    fetchCalendarEvents();
   } else {
     btn.textContent = 'ログイン';
     btn.classList.remove('signed-in');
+    calendarEvents = [];
+    renderCalendar();
+    updateMonthlySummary();
   }
   updateRegisterBtn();
 }
@@ -755,6 +971,17 @@ function renderCalendar() {
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
+  // Build a map of dateStr -> array of event colors for dot display
+  const eventsByDate = {};
+  calendarEvents.forEach(ev => {
+    const dateStr = getEventDateStr(ev);
+    if (!dateStr) return;
+    if (!eventsByDate[dateStr]) eventsByDate[dateStr] = [];
+    const colorId = ev.colorId || '0';
+    const color = GCAL_COLORS[colorId] || '#5aaa5e';
+    eventsByDate[dateStr].push(color);
+  });
+
   for (let i = 0; i < firstDay; i++) html += '<div class="day empty"></div>';
 
   for (let d = 1; d <= daysInMonth; d++) {
@@ -778,7 +1005,18 @@ function renderCalendar() {
       classes.push('selected');
     }
 
-    html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${d}</div>`;
+    const hasEvents = eventsByDate[dateStr] && eventsByDate[dateStr].length > 0;
+    if (hasEvents) classes.push('has-events');
+
+    let dotsHtml = '';
+    if (hasEvents) {
+      const uniqueColors = [...new Set(eventsByDate[dateStr])].slice(0, 3);
+      dotsHtml = '<div class="event-dots">' +
+        uniqueColors.map(c => `<div class="event-dot" style="background:${c}"></div>`).join('') +
+        '</div>';
+    }
+
+    html += `<div class="${classes.join(' ')}" data-date="${dateStr}">${d}${dotsHtml}</div>`;
   }
 
   grid.innerHTML = html;
@@ -788,11 +1026,182 @@ function renderCalendar() {
   });
 }
 
+// Get the date string (YYYY-MM-DD) from an event object
+function getEventDateStr(ev) {
+  if (ev.start.date) return ev.start.date;
+  if (ev.start.dateTime) return ev.start.dateTime.substring(0, 10);
+  return null;
+}
+
+// Fetch events from Google Calendar for the current month
+async function fetchCalendarEvents() {
+  if (!accessToken) {
+    calendarEvents = [];
+    updateMonthlySummary();
+    return;
+  }
+
+  const timeMin = new Date(currentYear, currentMonth, 1).toISOString();
+  const timeMax = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
+  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=250`;
+
+  try {
+    const resp = await fetch(url, {
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    if (resp.ok) {
+      const data = await resp.json();
+      calendarEvents = data.items || [];
+    } else if (resp.status === 401) {
+      accessToken = null;
+      updateAuthUI();
+      showToast('セッション切れ。再ログインしてください');
+      calendarEvents = [];
+    } else {
+      calendarEvents = [];
+    }
+  } catch (e) {
+    calendarEvents = [];
+  }
+
+  renderCalendar();
+  updateMonthlySummary();
+}
+
+// Delete event from Google Calendar
+async function deleteCalendarEvent(eventId) {
+  if (!accessToken) return false;
+  try {
+    const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
+      method: 'DELETE',
+      headers: { 'Authorization': 'Bearer ' + accessToken }
+    });
+    if (resp.ok || resp.status === 204) return true;
+    if (resp.status === 401) {
+      accessToken = null;
+      updateAuthUI();
+      showToast('セッション切れ。再ログインしてください');
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Show event popup for a date
+function showEventPopup(dateStr) {
+  const eventsOnDate = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+  if (eventsOnDate.length === 0) return;
+
+  const d = new Date(dateStr + 'T00:00:00');
+  const title = `${d.getMonth() + 1}月${d.getDate()}日のシフト`;
+  document.getElementById('eventPopupTitle').textContent = title;
+
+  const listEl = document.getElementById('eventPopupList');
+  if (eventsOnDate.length === 0) {
+    listEl.innerHTML = '<div class="event-popup-empty">登録されたシフトはありません</div>';
+  } else {
+    listEl.innerHTML = eventsOnDate.map(ev => {
+      const colorId = ev.colorId || '0';
+      const color = GCAL_COLORS[colorId] || '#5aaa5e';
+      let timeText = '終日';
+      if (ev.start.dateTime) {
+        const st = ev.start.dateTime.substring(11, 16);
+        const en = ev.end.dateTime.substring(11, 16);
+        timeText = `${st} 〜 ${en}`;
+      }
+      return `<div class="event-popup-item" data-event-id="${ev.id}">
+        <div class="event-popup-dot" style="background:${color}"></div>
+        <div class="event-popup-info">
+          <div class="event-popup-name">${ev.summary || '(無題)'}</div>
+          <div class="event-popup-time">${timeText}</div>
+        </div>
+        <button class="event-popup-delete" data-event-id="${ev.id}" title="削除">
+          <svg viewBox="0 0 24 24"><path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/></svg>
+        </button>
+      </div>`;
+    }).join('');
+
+    listEl.querySelectorAll('.event-popup-delete').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const eventId = btn.dataset.eventId;
+        btn.disabled = true;
+        btn.style.opacity = '0.3';
+        const ok = await deleteCalendarEvent(eventId);
+        if (ok) {
+          showToast('削除しました');
+          await fetchCalendarEvents();
+          // Refresh popup content
+          const remaining = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+          if (remaining.length === 0) {
+            document.getElementById('eventPopupOverlay').classList.remove('show');
+          } else {
+            showEventPopup(dateStr);
+          }
+        } else {
+          showToast('削除に失敗しました');
+          btn.disabled = false;
+          btn.style.opacity = '1';
+        }
+      });
+    });
+  }
+
+  document.getElementById('eventPopupOverlay').classList.add('show');
+}
+
+// Update monthly summary section
+function updateMonthlySummary() {
+  const summaryEl = document.getElementById('monthlySummary');
+  if (!accessToken || calendarEvents.length === 0) {
+    summaryEl.classList.remove('visible');
+    return;
+  }
+
+  summaryEl.classList.add('visible');
+
+  let totalMinutes = 0;
+  const shiftCounts = {};
+
+  calendarEvents.forEach(ev => {
+    const name = ev.summary || '(無題)';
+    shiftCounts[name] = shiftCounts[name] || { count: 0, color: GCAL_COLORS[ev.colorId] || '#5aaa5e' };
+    shiftCounts[name].count++;
+
+    if (ev.start.dateTime && ev.end.dateTime) {
+      const start = new Date(ev.start.dateTime);
+      const end = new Date(ev.end.dateTime);
+      totalMinutes += (end - start) / 60000;
+    }
+  });
+
+  const hours = Math.floor(totalMinutes / 60);
+  const mins = Math.round(totalMinutes % 60);
+  const totalText = mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`;
+
+  document.getElementById('summaryTotal').innerHTML =
+    `${totalText} <span>（${calendarEvents.length}件）</span>`;
+
+  document.getElementById('summaryBreakdown').innerHTML =
+    Object.entries(shiftCounts).map(([name, info]) =>
+      `<div class="summary-chip">
+        <div class="summary-chip-dot" style="background:${info.color}"></div>
+        ${name}: ${info.count}回
+      </div>`
+    ).join('');
+}
+
 function formatDate(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
 function onDayClick(dateStr) {
+  // Feature 2: Show event popup if date has events
+  const eventsOnDate = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+  if (eventsOnDate.length > 0 && accessToken) {
+    showEventPopup(dateStr);
+  }
+
   if (selectionMode === 'single') {
     const idx = selectedDates.indexOf(dateStr);
     if (idx >= 0) {
@@ -933,7 +1342,14 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     selectedDates = [];
     selectedShift = null;
     document.querySelectorAll('.shift-btn').forEach(b => b.classList.remove('selected'));
-    renderCalendar();
+    // Feature 4: Mascot bounce animation on success
+    const mascot = document.querySelector('.mascot-welcome');
+    mascot.classList.remove('bounce');
+    void mascot.offsetWidth; // force reflow
+    mascot.classList.add('bounce');
+    mascot.addEventListener('animationend', () => mascot.classList.remove('bounce'), { once: true });
+    // Feature 1: Refresh events after registration
+    fetchCalendarEvents();
     updateSelectionInfo();
   } else if (failed > 0) {
     showToast(`登録に失敗しました（${failed}件）`);
@@ -966,11 +1382,13 @@ document.getElementById('prevMonth').addEventListener('click', () => {
   currentMonth--;
   if (currentMonth < 0) { currentMonth = 11; currentYear--; }
   renderCalendar();
+  fetchCalendarEvents();
 });
 document.getElementById('nextMonth').addEventListener('click', () => {
   currentMonth++;
   if (currentMonth > 11) { currentMonth = 0; currentYear++; }
   renderCalendar();
+  fetchCalendarEvents();
 });
 
 document.getElementById('settingsBtn').addEventListener('click', () => {
@@ -1092,6 +1510,16 @@ function saveFromModal() {
   });
   saveShifts();
 }
+
+// Event popup close handlers
+document.getElementById('eventPopupClose').addEventListener('click', () => {
+  document.getElementById('eventPopupOverlay').classList.remove('show');
+});
+document.getElementById('eventPopupOverlay').addEventListener('click', (e) => {
+  if (e.target === e.currentTarget) {
+    e.currentTarget.classList.remove('show');
+  }
+});
 
 renderCalendar();
 renderShiftButtons();
