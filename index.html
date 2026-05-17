@@ -460,6 +460,24 @@ body {
 
 .modal-shift-item input[type="text"] { width: 80px; }
 .modal-shift-item input[type="time"] { width: 110px; }
+
+.allday-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: #5f6368;
+  white-space: nowrap;
+}
+
+.allday-wrap input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: #5aaa5e;
+}
+
+.time-inputs { display: flex; align-items: center; gap: 4px; }
+.time-inputs.hidden { display: none; }
 .color-picker-wrap {
   position: relative;
 }
@@ -611,8 +629,8 @@ let tokenClient;
 let accessToken = null;
 
 const DEFAULT_SHIFTS = [
-  { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#f28b1e' },
-  { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#8e24aa' },
+  { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#f28b1e', allDay: false },
+  { id: 'osoban', name: '遅番', start: '12:30', end: '22:00', color: '#8e24aa', allDay: false },
 ];
 
 const GCAL_COLORS = {
@@ -705,7 +723,7 @@ function renderShiftButtons() {
       <div class="shift-dot" style="background:${s.color}"></div>
       <div class="shift-btn-info">
         <div class="shift-btn-name">${s.name}</div>
-        <div class="shift-btn-time">${s.start} 〜 ${s.end}</div>
+        <div class="shift-btn-time">${s.allDay ? '終日' : s.start + ' 〜 ' + s.end}</div>
       </div>
     </div>
   `).join('');
@@ -872,7 +890,12 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
           'Authorization': 'Bearer ' + accessToken,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
+        body: JSON.stringify(shift.allDay ? {
+          summary: shift.name,
+          colorId: colorToId(shift.color),
+          start: { date: dateStr },
+          end: { date: dateStr },
+        } : {
           summary: shift.name,
           colorId: colorToId(shift.color),
           start: {
@@ -977,7 +1000,8 @@ document.getElementById('addShiftBtn').addEventListener('click', () => {
     name: '新シフト',
     start: '09:00',
     end: '18:00',
-    color: '#43a047'
+    color: '#43a047',
+    allDay: false
   });
   saveShifts();
   renderModal();
@@ -996,9 +1020,12 @@ function renderModal() {
         </div>
       </div>
       <input type="text" value="${s.name}" data-field="name" placeholder="名前">
-      <input type="time" value="${s.start}" data-field="start">
-      <span style="color:#5f6368">〜</span>
-      <input type="time" value="${s.end}" data-field="end">
+      <label class="allday-wrap"><input type="checkbox" data-field="allDay" ${s.allDay ? 'checked' : ''}>終日</label>
+      <div class="time-inputs${s.allDay ? ' hidden' : ''}">
+        <input type="time" value="${s.start}" data-field="start">
+        <span style="color:#5f6368">〜</span>
+        <input type="time" value="${s.end}" data-field="end">
+      </div>
       <button class="delete-btn" data-index="${i}">×</button>
     </div>
   `).join('');
@@ -1040,12 +1067,23 @@ function renderModal() {
       renderModal();
     });
   });
+
+  list.querySelectorAll('[data-field="allDay"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const item = cb.closest('.modal-shift-item');
+      const idx = parseInt(item.dataset.index);
+      shifts[idx].allDay = cb.checked;
+      item.querySelector('.time-inputs').classList.toggle('hidden', cb.checked);
+      saveShifts();
+    });
+  });
 }
 
 function saveFromModal() {
   document.querySelectorAll('.modal-shift-item').forEach((item, i) => {
     if (shifts[i]) {
       shifts[i].name = item.querySelector('[data-field="name"]').value || shifts[i].name;
+      shifts[i].allDay = item.querySelector('[data-field="allDay"]').checked;
       shifts[i].start = item.querySelector('[data-field="start"]').value || shifts[i].start;
       shifts[i].end = item.querySelector('[data-field="end"]').value || shifts[i].end;
       const colorEl = item.querySelector('.color-current');
