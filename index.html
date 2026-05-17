@@ -971,9 +971,9 @@ function renderCalendar() {
   const firstDay = new Date(currentYear, currentMonth, 1).getDay();
   const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
 
-  // Build a map of dateStr -> array of event colors for dot display
+  // Build a map of dateStr -> array of event colors for dot display (shifts only)
   const eventsByDate = {};
-  calendarEvents.forEach(ev => {
+  calendarEvents.filter(isShiftEvent).forEach(ev => {
     const dateStr = getEventDateStr(ev);
     if (!dateStr) return;
     if (!eventsByDate[dateStr]) eventsByDate[dateStr] = [];
@@ -1033,6 +1033,12 @@ function getEventDateStr(ev) {
   return null;
 }
 
+// Check if an event is a shift registered through this app
+function isShiftEvent(ev) {
+  const name = (ev.summary || '').trim();
+  return shifts.some(s => s.name === name);
+}
+
 // Fetch events from Google Calendar for the current month
 async function fetchCalendarEvents() {
   if (!accessToken) {
@@ -1090,7 +1096,7 @@ async function deleteCalendarEvent(eventId) {
 
 // Show event popup for a date
 function showEventPopup(dateStr) {
-  const eventsOnDate = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+  const eventsOnDate = calendarEvents.filter(ev => isShiftEvent(ev) && getEventDateStr(ev) === dateStr);
   if (eventsOnDate.length === 0) return;
 
   const d = new Date(dateStr + 'T00:00:00');
@@ -1132,7 +1138,7 @@ function showEventPopup(dateStr) {
           showToast('削除しました');
           await fetchCalendarEvents();
           // Refresh popup content
-          const remaining = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+          const remaining = calendarEvents.filter(ev => isShiftEvent(ev) && getEventDateStr(ev) === dateStr);
           if (remaining.length === 0) {
             document.getElementById('eventPopupOverlay').classList.remove('show');
           } else {
@@ -1162,8 +1168,14 @@ function updateMonthlySummary() {
 
   let totalMinutes = 0;
   const shiftCounts = {};
+  const shiftEvents = calendarEvents.filter(isShiftEvent);
 
-  calendarEvents.forEach(ev => {
+  if (shiftEvents.length === 0) {
+    summaryEl.classList.remove('visible');
+    return;
+  }
+
+  shiftEvents.forEach(ev => {
     const name = ev.summary || '(無題)';
     shiftCounts[name] = shiftCounts[name] || { count: 0, color: GCAL_COLORS[ev.colorId] || '#5aaa5e' };
     shiftCounts[name].count++;
@@ -1180,7 +1192,7 @@ function updateMonthlySummary() {
   const totalText = mins > 0 ? `${hours}時間${mins}分` : `${hours}時間`;
 
   document.getElementById('summaryTotal').innerHTML =
-    `${totalText} <span>（${calendarEvents.length}件）</span>`;
+    `${totalText} <span>（${shiftEvents.length}件）</span>`;
 
   document.getElementById('summaryBreakdown').innerHTML =
     Object.entries(shiftCounts).map(([name, info]) =>
@@ -1196,8 +1208,8 @@ function formatDate(d) {
 }
 
 function onDayClick(dateStr) {
-  // Feature 2: Show event popup if date has events
-  const eventsOnDate = calendarEvents.filter(ev => getEventDateStr(ev) === dateStr);
+  // Feature 2: Show event popup if date has shift events
+  const eventsOnDate = calendarEvents.filter(ev => isShiftEvent(ev) && getEventDateStr(ev) === dateStr);
   if (eventsOnDate.length > 0 && accessToken) {
     showEventPopup(dateStr);
   }
