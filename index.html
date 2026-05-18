@@ -764,7 +764,7 @@ body {
 </div>
 
 <div class="container">
-  <img class="mascot-welcome" src="midorin-tea.jpg" alt="みどりん">
+  <img class="mascot-welcome" src="5月.jpg" alt="みどりん">
   <div class="section-label"><img class="mascot-section" src="midorin-clover.jpg" alt="">日付を選択</div>
   <div class="date-picker-wrap">
     <div class="date-nav">
@@ -965,6 +965,12 @@ function renderCalendar() {
   const grid = document.getElementById('calendarGrid');
   const label = document.getElementById('monthLabel');
   label.textContent = `${currentYear}年${currentMonth + 1}月`;
+
+  // Update mascot image based on month
+  const monthImg = document.querySelector('.mascot-welcome');
+  if (monthImg) {
+    monthImg.src = `${currentMonth + 1}月.jpg`;
+  }
 
   const dows = ['日','月','火','水','木','金','土'];
   let html = dows.map((d, i) => `<div class="dow">${d}</div>`).join('');
