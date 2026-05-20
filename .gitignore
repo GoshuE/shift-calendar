@@ -1,0 +1,6 @@
+# Claude Code 関連
+.claude/
+
+# 開発補助の一時ファイル
+font-compare.html
+_*.py

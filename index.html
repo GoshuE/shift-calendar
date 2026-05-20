@@ -5,13 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#5aaa5e">
+<meta name="theme-color" content="#6aab6d">
 <title>しふとん🌱</title>
 <link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&display=swap" rel="stylesheet">
-<link rel="icon" href="midorin2.jpg" type="image/jpeg">
+<link rel="icon" href="icon-192.png" type="image/png">
+<link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -895,7 +896,7 @@ body {
 
 <div class="header">
   <div class="header-center">
-    <img class="mascot-header" src="midorintop.png" alt="みどりん">
+    <img class="mascot-header" src="midorintop.webp" alt="みどりん" width="72" height="72" fetchpriority="high" decoding="async">
     しふとん
   </div>
   <div class="header-right">
@@ -904,8 +905,8 @@ body {
 </div>
 
 <div class="container">
-  <img class="mascot-welcome" src="5月.jpg" alt="みどりん">
-  <div class="section-label"><img class="mascot-section" src="midorin-clover.jpg" alt="">日付を選択</div>
+  <img class="mascot-welcome" src="5月.webp" alt="みどりん" width="120" height="120" fetchpriority="high" decoding="async">
+  <div class="section-label"><img class="mascot-section" src="midorin-clover.webp" alt="" decoding="async">日付を選択</div>
   <div class="date-picker-wrap">
     <div class="date-nav">
       <button id="prevMonth">&#8249;</button>
@@ -922,12 +923,12 @@ body {
   </div>
 
   <div class="mascot-between">
-    <img src="midorin-umbrella.jpg" alt="">
-    <img src="midorin-tree.jpg" alt="">
-    <img src="midorin-basket.jpg" alt="">
+    <img src="midorin-umbrella.webp" alt="" loading="lazy" decoding="async">
+    <img src="midorin-tree.webp" alt="" loading="lazy" decoding="async">
+    <img src="midorin-basket.webp" alt="" loading="lazy" decoding="async">
   </div>
 
-  <div class="section-label"><img class="mascot-section" src="midorin-dango2.jpg" alt="">シフトを選択</div>
+  <div class="section-label"><img class="mascot-section" src="midorin-dango2.webp" alt="" loading="lazy" decoding="async">シフトを選択</div>
   <div class="shift-buttons" id="shiftButtons"></div>
 
   <button class="register-btn" id="registerBtn" disabled>Googleカレンダーに登録</button>
@@ -962,13 +963,13 @@ body {
 </div>
 
 <div class="mascot-footer">
-  <img src="midorin-clover.jpg" alt="">
-  <img src="yoko1.jpg" alt="">
-  <img src="yoko2.jpg" alt="">
-  <img src="yoko3.jpg" alt="">
-  <img src="yoko4.jpg" alt="">
-  <img src="yoko5.jpg" alt="">
-  <img src="midorin-clover.jpg" alt="">
+  <img src="midorin-clover.webp" alt="" loading="lazy" decoding="async">
+  <img src="yoko1.webp" alt="" loading="lazy" decoding="async">
+  <img src="yoko2.webp" alt="" loading="lazy" decoding="async">
+  <img src="yoko3.webp" alt="" loading="lazy" decoding="async">
+  <img src="yoko4.webp" alt="" loading="lazy" decoding="async">
+  <img src="yoko5.webp" alt="" loading="lazy" decoding="async">
+  <img src="midorin-clover.webp" alt="" loading="lazy" decoding="async">
 </div>
 
 <div class="toast" id="toast"></div>
@@ -991,6 +992,8 @@ const CLIENT_ID = '1051838677110-piv0se3763lgiock79vj641vcprkni43.apps.googleuse
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 let tokenClient;
 let accessToken = null;
+let tokenExpiresAt = 0;
+let _pendingTokenPromise = null;
 
 const DEFAULT_SHIFTS = [
   { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#f28b1e', allDay: false },
@@ -1034,14 +1037,89 @@ function initGIS() {
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID,
     scope: SCOPES,
-    callback: (response) => {
-      if (response.access_token) {
-        accessToken = response.access_token;
-        updateAuthUI();
-        showToast('ログインしました');
-      }
-    },
+    callback: () => {}, // requestToken() で動的に上書きする
   });
+}
+
+// Silent / explicit token request. Returns a Promise resolved with the token response.
+// silent=true は prompt='' でユーザー操作なしの再取得を試みる（Cookieが残っていれば成功）。
+// 失敗時はrejectし、呼び出し側で明示ログイン or エラー表示にフォールバックする。
+function requestToken({ silent = false } = {}) {
+  if (_pendingTokenPromise) return _pendingTokenPromise;
+  _pendingTokenPromise = new Promise((resolve, reject) => {
+    let settled = false;
+    const finish = (fn, value) => {
+      if (settled) return;
+      settled = true;
+      _pendingTokenPromise = null;
+      fn(value);
+    };
+    const timeoutMs = silent ? 5000 : 60000;
+    const timer = setTimeout(() => finish(reject, new Error('TOKEN_TIMEOUT')), timeoutMs);
+
+    tokenClient.callback = (resp) => {
+      clearTimeout(timer);
+      if (resp && resp.access_token) {
+        accessToken = resp.access_token;
+        const expiresIn = Number(resp.expires_in) || 3600;
+        tokenExpiresAt = Date.now() + (expiresIn - 60) * 1000; // 60秒の安全マージン
+        finish(resolve, resp);
+      } else {
+        finish(reject, resp || new Error('TOKEN_DENIED'));
+      }
+    };
+    tokenClient.error_callback = (err) => {
+      clearTimeout(timer);
+      finish(reject, err || new Error('TOKEN_ERROR'));
+    };
+
+    try {
+      tokenClient.requestAccessToken({ prompt: silent ? '' : 'consent' });
+    } catch (e) {
+      clearTimeout(timer);
+      finish(reject, e);
+    }
+  });
+  return _pendingTokenPromise;
+}
+
+// Calendar API用 fetch ラッパー。
+// 1. 期限切れ間近ならプロアクティブにsilent renewを試みる
+// 2. 401を受けたらリアクティブにsilent renewして1度だけリトライ
+// 3. それでも失敗したら AUTH_FAILED を投げ、呼び出し側でフォールバック処理
+async function apiFetch(url, options = {}) {
+  // プロアクティブ更新（期限切れ or 既に切れている場合のみ）
+  if (accessToken && Date.now() >= tokenExpiresAt) {
+    try { await requestToken({ silent: true }); }
+    catch (e) { /* リアクティブ側で処理 */ }
+  }
+  if (!accessToken) throw new Error('AUTH_FAILED');
+
+  const buildInit = () => ({
+    ...options,
+    headers: { ...(options.headers || {}), 'Authorization': 'Bearer ' + accessToken },
+  });
+
+  let resp = await fetch(url, buildInit());
+  if (resp.status !== 401) return resp;
+
+  // リアクティブ更新を試行
+  try {
+    await requestToken({ silent: true });
+  } catch (e) {
+    accessToken = null;
+    tokenExpiresAt = 0;
+    updateAuthUI();
+    throw new Error('AUTH_FAILED');
+  }
+  resp = await fetch(url, buildInit());
+  if (resp.status === 401) {
+    accessToken = null;
+    tokenExpiresAt = 0;
+    updateAuthUI();
+    throw new Error('AUTH_FAILED');
+  }
+  return resp;
 }
 
 window.addEventListener('load', () => {
@@ -1051,6 +1129,13 @@ window.addEventListener('load', () => {
       initGIS();
     }
   }, 100);
+
+  // Service Worker 登録（PWAキャッシュ／オフライン対応）
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('./sw.js').catch((e) => {
+      console.warn('SW registration failed:', e);
+    });
+  }
 });
 
 function updateAuthUI() {
@@ -1070,14 +1155,21 @@ function updateAuthUI() {
   if (typeof updateTemplateApplyBtn === 'function') updateTemplateApplyBtn();
 }
 
-document.getElementById('authBtn').addEventListener('click', () => {
+document.getElementById('authBtn').addEventListener('click', async () => {
   if (accessToken) {
     google.accounts.oauth2.revoke(accessToken);
     accessToken = null;
+    tokenExpiresAt = 0;
     updateAuthUI();
     showToast('ログアウトしました');
   } else {
-    tokenClient.requestAccessToken();
+    try {
+      await requestToken({ silent: false });
+      updateAuthUI();
+      showToast('ログインしました');
+    } catch (e) {
+      showToast('ログインできませんでした');
+    }
   }
 });
 
@@ -1122,7 +1214,7 @@ function renderCalendar() {
   // Update mascot image based on month
   const monthImg = document.querySelector('.mascot-welcome');
   if (monthImg) {
-    monthImg.src = `${currentMonth + 1}月.jpg`;
+    monthImg.src = `${currentMonth + 1}月.webp`;
   }
 
   const dows = ['日','月','火','水','木','金','土'];
@@ -1212,22 +1304,18 @@ async function fetchCalendarEvents() {
   const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=250`;
 
   try {
-    const resp = await fetch(url, {
-      headers: { 'Authorization': 'Bearer ' + accessToken }
-    });
+    const resp = await apiFetch(url);
     if (resp.ok) {
       const data = await resp.json();
       calendarEvents = data.items || [];
-    } else if (resp.status === 401) {
-      accessToken = null;
-      updateAuthUI();
-      showToast('セッション切れ。再ログインしてください');
-      calendarEvents = [];
     } else {
       calendarEvents = [];
     }
   } catch (e) {
     calendarEvents = [];
+    if (e && e.message === 'AUTH_FAILED') {
+      showToast('セッションを更新できませんでした。再ログインしてください');
+    }
   }
 
   renderCalendar();
@@ -1238,18 +1326,15 @@ async function fetchCalendarEvents() {
 async function deleteCalendarEvent(eventId) {
   if (!accessToken) return false;
   try {
-    const resp = await fetch(`https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`, {
-      method: 'DELETE',
-      headers: { 'Authorization': 'Bearer ' + accessToken }
-    });
-    if (resp.ok || resp.status === 204) return true;
-    if (resp.status === 401) {
-      accessToken = null;
-      updateAuthUI();
-      showToast('セッション切れ。再ログインしてください');
-    }
-    return false;
+    const resp = await apiFetch(
+      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`,
+      { method: 'DELETE' }
+    );
+    return resp.ok || resp.status === 204;
   } catch (e) {
+    if (e && e.message === 'AUTH_FAILED') {
+      showToast('セッションを更新できませんでした。再ログインしてください');
+    }
     return false;
   }
 }
@@ -1439,8 +1524,13 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
   if (!selectedShift || selectedDates.length === 0) return;
 
   if (!accessToken) {
-    tokenClient.requestAccessToken();
-    return;
+    try {
+      await requestToken({ silent: false });
+      updateAuthUI();
+    } catch (e) {
+      showToast('ログインできませんでした');
+      return;
+    }
   }
 
   const shift = shifts.find(s => s.id === selectedShift);
@@ -1457,6 +1547,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
   let success = 0;
   let failed = 0;
+  let authFailed = false;
 
   for (let i = 0; i < dates.length; i++) {
     const dateStr = dates[i];
@@ -1465,12 +1556,9 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     progressText.textContent = `${i + 1} / ${dates.length} 件処理中...`;
 
     try {
-      const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      const resp = await apiFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(shift.allDay ? {
           summary: shift.name,
           colorId: colorToId(shift.color),
@@ -1492,17 +1580,20 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
 
       if (resp.ok) {
         success++;
-      } else if (resp.status === 401) {
-        accessToken = null;
-        updateAuthUI();
-        showToast('セッション切れ。再ログインしてください');
-        break;
       } else {
         failed++;
       }
     } catch (e) {
+      if (e && e.message === 'AUTH_FAILED') {
+        authFailed = true;
+        break;
+      }
       failed++;
     }
+  }
+
+  if (authFailed) {
+    showToast('セッションを更新できませんでした。再ログインしてやり直してください');
   }
 
   progressBar.classList.remove('active');
@@ -1755,8 +1846,13 @@ document.getElementById('templateClearBtn').addEventListener('click', () => {
 
 document.getElementById('templateApplyBtn').addEventListener('click', async () => {
   if (!accessToken) {
-    tokenClient.requestAccessToken();
-    return;
+    try {
+      await requestToken({ silent: false });
+      updateAuthUI();
+    } catch (e) {
+      showToast('ログインできませんでした');
+      return;
+    }
   }
 
   // Gather all date-shift pairs for the current month
@@ -1791,6 +1887,7 @@ document.getElementById('templateApplyBtn').addEventListener('click', async () =
 
   let success = 0;
   let failed = 0;
+  let authFailed = false;
 
   for (let i = 0; i < pairs.length; i++) {
     const { dateStr, shift } = pairs[i];
@@ -1799,12 +1896,9 @@ document.getElementById('templateApplyBtn').addEventListener('click', async () =
     progressText.textContent = `${i + 1} / ${pairs.length} 件処理中...`;
 
     try {
-      const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      const resp = await apiFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
         method: 'POST',
-        headers: {
-          'Authorization': 'Bearer ' + accessToken,
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(shift.allDay ? {
           summary: shift.name,
           colorId: colorToId(shift.color),
@@ -1820,17 +1914,20 @@ document.getElementById('templateApplyBtn').addEventListener('click', async () =
 
       if (resp.ok) {
         success++;
-      } else if (resp.status === 401) {
-        accessToken = null;
-        updateAuthUI();
-        showToast('セッション切れ。再ログインしてください');
-        break;
       } else {
         failed++;
       }
     } catch (e) {
+      if (e && e.message === 'AUTH_FAILED') {
+        authFailed = true;
+        break;
+      }
       failed++;
     }
+  }
+
+  if (authFailed) {
+    showToast('セッションを更新できませんでした。再ログインしてやり直してください');
   }
 
   progressBar.classList.remove('active');
