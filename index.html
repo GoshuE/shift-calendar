@@ -619,6 +619,106 @@ body {
   animation: mascotWaveBounce 0.8s ease 2;
 }
 
+/* === Template feature === */
+.template-section {
+  margin-top: 20px;
+  background: #f0f7e8;
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.template-section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #3d7a3f;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.template-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.template-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.template-dow {
+  width: 28px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #555;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.template-dow.sun { color: #d50000; }
+.template-dow.sat { color: #039be5; }
+
+.template-select {
+  flex: 1;
+  padding: 8px 10px;
+  border: 2px solid #d4e8c4;
+  border-radius: 10px;
+  font-size: 13px;
+  background: white;
+  color: #333;
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23999'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 18px;
+}
+
+.template-select:focus {
+  outline: none;
+  border-color: #5aaa5e;
+}
+
+.template-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.template-btn {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.template-btn.save {
+  background: #5aaa5e;
+  color: white;
+}
+
+.template-btn.apply {
+  background: linear-gradient(135deg, #5aaa5e, #4a9a4e);
+  color: white;
+}
+
+.template-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.template-btn.clear {
+  background: #e0e0e0;
+  color: #666;
+  flex: 0.5;
+}
+
 .modal-overlay {
   position: fixed;
   inset: 0;
@@ -814,6 +914,16 @@ body {
     <div class="monthly-summary-total" id="summaryTotal"></div>
     <div class="monthly-summary-breakdown" id="summaryBreakdown"></div>
   </div>
+
+  <div class="template-section">
+    <div class="template-section-title">📋 週パターン一括登録</div>
+    <div class="template-grid" id="templateGrid"></div>
+    <div class="template-actions">
+      <button class="template-btn clear" id="templateClearBtn">リセット</button>
+      <button class="template-btn save" id="templateSaveBtn">保存</button>
+      <button class="template-btn apply" id="templateApplyBtn" disabled>今月に一括登録</button>
+    </div>
+  </div>
 </div>
 
 <div class="event-popup-overlay" id="eventPopupOverlay">
@@ -930,6 +1040,7 @@ function updateAuthUI() {
     updateMonthlySummary();
   }
   updateRegisterBtn();
+  if (typeof updateTemplateApplyBtn === 'function') updateTemplateApplyBtn();
 }
 
 document.getElementById('authBtn').addEventListener('click', () => {
@@ -1559,8 +1670,164 @@ document.getElementById('eventPopupOverlay').addEventListener('click', (e) => {
   }
 });
 
+// === Template (weekly pattern) feature ===
+let weekTemplate = JSON.parse(localStorage.getItem('weekTemplate') || 'null') || {};
+
+function renderTemplateGrid() {
+  const dows = ['日','月','火','水','木','金','土'];
+  const grid = document.getElementById('templateGrid');
+  grid.innerHTML = dows.map((dow, i) => {
+    const cls = i === 0 ? 'sun' : i === 6 ? 'sat' : '';
+    const options = shifts.map(s =>
+      `<option value="${s.id}" ${weekTemplate[i] === s.id ? 'selected' : ''}>${s.name}</option>`
+    ).join('');
+    return `<div class="template-row">
+      <div class="template-dow ${cls}">${dow}</div>
+      <select class="template-select" data-dow="${i}">
+        <option value="">— 休み —</option>
+        ${options}
+      </select>
+    </div>`;
+  }).join('');
+
+  grid.querySelectorAll('.template-select').forEach(sel => {
+    sel.addEventListener('change', () => {
+      const dow = parseInt(sel.dataset.dow);
+      if (sel.value) {
+        weekTemplate[dow] = sel.value;
+      } else {
+        delete weekTemplate[dow];
+      }
+    });
+  });
+
+  updateTemplateApplyBtn();
+}
+
+function updateTemplateApplyBtn() {
+  const btn = document.getElementById('templateApplyBtn');
+  btn.disabled = !accessToken;
+}
+
+document.getElementById('templateSaveBtn').addEventListener('click', () => {
+  localStorage.setItem('weekTemplate', JSON.stringify(weekTemplate));
+  showToast('週パターンを保存しました🌱');
+});
+
+document.getElementById('templateClearBtn').addEventListener('click', () => {
+  weekTemplate = {};
+  localStorage.removeItem('weekTemplate');
+  renderTemplateGrid();
+  showToast('パターンをリセットしました');
+});
+
+document.getElementById('templateApplyBtn').addEventListener('click', async () => {
+  if (!accessToken) {
+    tokenClient.requestAccessToken();
+    return;
+  }
+
+  // Gather all date-shift pairs for the current month
+  const pairs = [];
+  const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+  for (let d = 1; d <= daysInMonth; d++) {
+    const date = new Date(currentYear, currentMonth, d);
+    const dow = date.getDay();
+    if (weekTemplate[dow]) {
+      const shift = shifts.find(s => s.id === weekTemplate[dow]);
+      if (shift) {
+        const dateStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        pairs.push({ dateStr, shift });
+      }
+    }
+  }
+
+  if (pairs.length === 0) {
+    showToast('登録するシフトがありません');
+    return;
+  }
+
+  const btn = document.getElementById('templateApplyBtn');
+  const progressBar = document.getElementById('progressBar');
+  const progressFill = document.getElementById('progressFill');
+  const progressText = document.getElementById('progressText');
+
+  btn.disabled = true;
+  btn.textContent = '登録中...';
+  progressBar.classList.add('active');
+  progressText.classList.add('active');
+
+  let success = 0;
+  let failed = 0;
+
+  for (let i = 0; i < pairs.length; i++) {
+    const { dateStr, shift } = pairs[i];
+    const pct = ((i + 1) / pairs.length * 100).toFixed(0);
+    progressFill.style.width = pct + '%';
+    progressText.textContent = `${i + 1} / ${pairs.length} 件処理中...`;
+
+    try {
+      const resp = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + accessToken,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(shift.allDay ? {
+          summary: shift.name,
+          colorId: colorToId(shift.color),
+          start: { date: dateStr },
+          end: { date: dateStr },
+        } : {
+          summary: shift.name,
+          colorId: colorToId(shift.color),
+          start: { dateTime: `${dateStr}T${shift.start}:00`, timeZone: 'Asia/Tokyo' },
+          end: { dateTime: `${dateStr}T${shift.end}:00`, timeZone: 'Asia/Tokyo' },
+        }),
+      });
+
+      if (resp.ok) {
+        success++;
+      } else if (resp.status === 401) {
+        accessToken = null;
+        updateAuthUI();
+        showToast('セッション切れ。再ログインしてください');
+        break;
+      } else {
+        failed++;
+      }
+    } catch (e) {
+      failed++;
+    }
+  }
+
+  progressBar.classList.remove('active');
+  progressText.classList.remove('active');
+  progressFill.style.width = '0%';
+
+  if (success > 0) {
+    showToast(`${success}件登録しました` + (failed > 0 ? `（${failed}件失敗）` : ''));
+    const mascots = document.querySelectorAll('.mascot-between img');
+    mascots.forEach((img, i) => {
+      img.classList.remove('wave-bounce');
+      void img.offsetWidth;
+      setTimeout(() => {
+        img.classList.add('wave-bounce');
+        img.addEventListener('animationend', () => img.classList.remove('wave-bounce'), { once: true });
+      }, i * 150);
+    });
+    fetchCalendarEvents();
+  } else if (failed > 0) {
+    showToast(`登録に失敗しました（${failed}件）`);
+  }
+
+  btn.textContent = '今月に一括登録';
+  updateTemplateApplyBtn();
+});
+
 renderCalendar();
 renderShiftButtons();
+renderTemplateGrid();
 </script>
 </body>
 </html>
