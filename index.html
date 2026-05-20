@@ -35,7 +35,19 @@ body {
   z-index: 100;
   display: flex;
   align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
   gap: 10px;
+}
+
+.header-right {
+  position: absolute;
+  right: 16px;
 }
 
 .header svg.header-icon { width: 24px; height: 24px; fill: white; }
@@ -756,8 +768,10 @@ body {
 <body>
 
 <div class="header">
-  <img class="mascot-header" src="midorin2.jpg" alt="みどりん">
-  しふとん🌱
+  <div class="header-center">
+    <img class="mascot-header" src="midorintop.png" alt="みどりん">
+    しふとん🌱
+  </div>
   <div class="header-right">
     <button class="auth-btn" id="authBtn">ログイン</button>
   </div>
