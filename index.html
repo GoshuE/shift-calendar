@@ -112,18 +112,19 @@ body {
 }
 
 .auth-btn {
-  background: rgba(255,255,255,0.2);
   border: none;
-  color: white;
   padding: 6px 14px;
   border-radius: 20px;
   font-size: 13px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.3s, color 0.3s;
+  background: #ff8a65;
+  color: white;
 }
 
-.auth-btn:active { background: rgba(255,255,255,0.3); }
-.auth-btn.signed-in { background: rgba(255,255,255,0.15); font-size: 11px; }
+.auth-btn:active { opacity: 0.8; }
+.auth-btn.signed-in { background: white; color: #5a9e3e; font-size: 12px; }
 
 .container { padding: 16px; max-width: 480px; margin: 0 auto; }
 
