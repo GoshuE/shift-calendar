@@ -631,10 +631,35 @@ body {
   font-size: 15px;
   font-weight: 600;
   color: #3d7a3f;
-  margin-bottom: 12px;
+  margin-bottom: 0;
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.template-section-title::after {
+  content: '▼';
+  font-size: 10px;
+  margin-left: auto;
+  transition: transform 0.3s;
+}
+
+.template-section.collapsed .template-section-title::after {
+  transform: rotate(-90deg);
+}
+
+.template-body {
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height 0.3s ease, margin-top 0.3s ease;
+  margin-top: 12px;
+}
+
+.template-section.collapsed .template-body {
+  max-height: 0;
+  margin-top: 0;
 }
 
 .template-grid {
@@ -915,13 +940,15 @@ body {
     <div class="monthly-summary-breakdown" id="summaryBreakdown"></div>
   </div>
 
-  <div class="template-section">
-    <div class="template-section-title">📋 週パターン一括登録</div>
-    <div class="template-grid" id="templateGrid"></div>
-    <div class="template-actions">
-      <button class="template-btn clear" id="templateClearBtn">リセット</button>
-      <button class="template-btn save" id="templateSaveBtn">保存</button>
-      <button class="template-btn apply" id="templateApplyBtn" disabled>今月に一括登録</button>
+  <div class="template-section collapsed" id="templateSection">
+    <div class="template-section-title" id="templateToggle">📋 週パターン一括登録</div>
+    <div class="template-body">
+      <div class="template-grid" id="templateGrid"></div>
+      <div class="template-actions">
+        <button class="template-btn clear" id="templateClearBtn">リセット</button>
+        <button class="template-btn save" id="templateSaveBtn">保存</button>
+        <button class="template-btn apply" id="templateApplyBtn" disabled>今月に一括登録</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1668,6 +1695,11 @@ document.getElementById('eventPopupOverlay').addEventListener('click', (e) => {
   if (e.target === e.currentTarget) {
     e.currentTarget.classList.remove('show');
   }
+});
+
+// === Template toggle ===
+document.getElementById('templateToggle').addEventListener('click', () => {
+  document.getElementById('templateSection').classList.toggle('collapsed');
 });
 
 // === Template (weekly pattern) feature ===
