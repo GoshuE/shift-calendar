@@ -1181,8 +1181,11 @@ window.addEventListener('load', () => {
   }, 100);
 
   // Service Worker 登録（PWAキャッシュ／オフライン対応）
+  // 本番（GitHub Pages /shift-calendar/）と localhost の両方で動くよう、現在ページ基準の相対 sw.js を使い
+  // scope を明示してマニフェストの scope と一致させる
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch((e) => {
+    const swScope = location.pathname.replace(/[^/]*$/, '');
+    navigator.serviceWorker.register('./sw.js', { scope: swScope }).catch((e) => {
       console.warn('SW registration failed:', e);
     });
   }
