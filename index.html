@@ -36,19 +36,13 @@ body {
   z-index: 100;
   display: flex;
   align-items: center;
-  justify-content: center;
-  position: relative;
+  gap: 10px;
 }
 
 .header-center {
   display: flex;
   align-items: center;
   gap: 10px;
-}
-
-.header-right {
-  position: absolute;
-  right: 16px;
 }
 
 .header svg.header-icon { width: 24px; height: 24px; fill: white; }
@@ -990,10 +984,54 @@ body {
 <script>
 const CLIENT_ID = '1051838677110-piv0se3763lgiock79vj641vcprkni43.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+const TOKEN_STORAGE_KEY = 'shifton_token';
+const AUTH_MARKER_KEY = 'shifton_auth_once';
 let tokenClient;
 let accessToken = null;
 let tokenExpiresAt = 0;
 let _pendingTokenPromise = null;
+
+// localStorage にトークンを保存（妻専用デバイス前提でセキュリティ要件は緩い）
+function saveTokenToStorage() {
+  try {
+    if (accessToken && tokenExpiresAt > Date.now()) {
+      localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({ accessToken, tokenExpiresAt }));
+      // 一度でも認証成功したマーカー（次回起動時の silent renew 判定に使う）
+      localStorage.setItem(AUTH_MARKER_KEY, '1');
+    } else {
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+    }
+  } catch (e) { /* localStorage 不可環境では何もしない */ }
+}
+
+function loadTokenFromStorage() {
+  try {
+    const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
+    if (!raw) return false;
+    const { accessToken: at, tokenExpiresAt: te } = JSON.parse(raw);
+    if (at && te && Date.now() < te) {
+      accessToken = at;
+      tokenExpiresAt = te;
+      return true;
+    }
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+  } catch (e) {
+    try { localStorage.removeItem(TOKEN_STORAGE_KEY); } catch (_) {}
+  }
+  return false;
+}
+
+function clearStoredToken() {
+  try {
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
+    localStorage.removeItem(AUTH_MARKER_KEY);
+  } catch (e) {}
+}
+
+function hasAuthHistory() {
+  try { return localStorage.getItem(AUTH_MARKER_KEY) === '1'; }
+  catch (e) { return false; }
+}
 
 const DEFAULT_SHIFTS = [
   { id: 'hayaban', name: '早番', start: '07:30', end: '17:00', color: '#f28b1e', allDay: false },
@@ -1039,6 +1077,17 @@ function initGIS() {
     scope: SCOPES,
     callback: () => {}, // requestToken() で動的に上書きする
   });
+  // 起動時の自動ログイン復元
+  bootstrapAuth();
+}
+
+// 起動時：localStorage の有効トークンがあれば即時復元
+// 期限切れ／無トークンの場合は明示ログイン待ち（起動時の自動 popup を避けるため silent renew はしない）
+// 妻が一度ログインすればトークンは localStorage に保存され、期限（最大1時間）内は再起動でも自動ログイン状態
+// 期限切れ後は API 呼び出し時に apiFetch がリアクティブに silent renew を試行する
+function bootstrapAuth() {
+  loadTokenFromStorage();
+  updateAuthUI();
 }
 
 // Silent / explicit token request. Returns a Promise resolved with the token response.
@@ -1063,6 +1112,7 @@ function requestToken({ silent = false } = {}) {
         accessToken = resp.access_token;
         const expiresIn = Number(resp.expires_in) || 3600;
         tokenExpiresAt = Date.now() + (expiresIn - 60) * 1000; // 60秒の安全マージン
+        saveTokenToStorage();
         finish(resolve, resp);
       } else {
         finish(reject, resp || new Error('TOKEN_DENIED'));
@@ -1160,6 +1210,7 @@ document.getElementById('authBtn').addEventListener('click', async () => {
     google.accounts.oauth2.revoke(accessToken);
     accessToken = null;
     tokenExpiresAt = 0;
+    clearStoredToken();
     updateAuthUI();
     showToast('ログアウトしました');
   } else {
