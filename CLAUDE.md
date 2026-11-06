@@ -17,7 +17,9 @@ Googleカレンダーにシフト（早番・遅番など）を一括登録で�
 - **データ永続化**: localStorage（シフト設定・週テンプレート）
 
 ## OAuth設定
+- **Google Cloud プロジェクト**: `shift-calendar`（ID `shift-calendar-496302`、番号 1051838677110、組織なし。家族サイトの family-site-auth とは別組織・別プロジェクト）
 - **Client ID**: `1051838677110-piv0se3763lgiock79vj641vcprkni43.apps.googleusercontent.com`（クライアントサイド公開前提の識別子）
+- **家族サイト中継モード**: https://home.goshu.net/shifton/ では family-site の Worker がカレンダー API を中継する（同じクライアントを使用。シークレットは 1Password `Automation/Shifton Google OAuth`）
 - **スコープ**: `https://www.googleapis.com/auth/calendar.events`
 - **テストユーザー**: Google Cloud Console の OAuth 同意画面で追加・管理する（個人メールアドレスのため、このファイルには記載しない）
 
