@@ -1,10 +1,10 @@
 {
-  "id": "https://goshue.github.io/shift-calendar/",
+  "id": "./",
   "name": "しふとん🌱",
   "short_name": "しふとん",
   "description": "Googleカレンダーにシフトをサクッと登録できるみどりんのアプリ",
-  "start_url": "https://goshue.github.io/shift-calendar/",
-  "scope": "https://goshue.github.io/shift-calendar/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "ja",

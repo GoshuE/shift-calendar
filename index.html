@@ -984,6 +984,10 @@ body {
 <script>
 const CLIENT_ID = '1051838677110-piv0se3763lgiock79vj641vcprkni43.apps.googleusercontent.com';
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+// 中継モード: 家族サイト（home.goshu.net）配下では Google 直叩きをやめ、Worker（/api/shifton/calendar）経由で
+// カレンダーを操作する。本人確認は Cloudflare Access、カレンダー権限は Worker が各人のリフレッシュトークンで代行する。
+const PROXY_MODE = location.hostname === 'home.goshu.net';
+const CAL_BASE = PROXY_MODE ? '/api/shifton/calendar' : 'https://www.googleapis.com/calendar/v3';
 const TOKEN_STORAGE_KEY = 'shifton_token';
 const AUTH_MARKER_KEY = 'shifton_auth_once';
 let tokenClient;
@@ -993,6 +997,7 @@ let _pendingTokenPromise = null;
 
 // localStorage にトークンを保存（妻専用デバイス前提でセキュリティ要件は緩い）
 function saveTokenToStorage() {
+  if (PROXY_MODE) return;
   try {
     if (accessToken && tokenExpiresAt > Date.now()) {
       localStorage.setItem(TOKEN_STORAGE_KEY, JSON.stringify({ accessToken, tokenExpiresAt }));
@@ -1005,6 +1010,7 @@ function saveTokenToStorage() {
 }
 
 function loadTokenFromStorage() {
+  if (PROXY_MODE) return false;
   try {
     const raw = localStorage.getItem(TOKEN_STORAGE_KEY);
     if (!raw) return false;
@@ -1070,6 +1076,19 @@ let calendarEvents = [];
 const today = new Date();
 currentYear = today.getFullYear();
 currentMonth = today.getMonth();
+
+async function initProxyAuth() {
+  try {
+    const r = await fetch('/auth/google/status', { cache: 'no-store' });
+    const st = r.ok ? await r.json() : { connected: false };
+    accessToken = st.connected ? 'proxy' : null;
+    tokenExpiresAt = st.connected ? Number.MAX_SAFE_INTEGER : 0;
+  } catch (e) {
+    accessToken = null;
+    tokenExpiresAt = 0;
+  }
+  updateAuthUI();
+}
 
 function initGIS() {
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -1138,6 +1157,16 @@ function requestToken({ silent = false } = {}) {
 // 2. 401を受けたらリアクティブにsilent renewして1度だけリトライ
 // 3. それでも失敗したら AUTH_FAILED を投げ、呼び出し側でフォールバック処理
 async function apiFetch(url, options = {}) {
+  if (PROXY_MODE) {
+    const resp = await fetch(url, { ...options, credentials: 'same-origin' });
+    if (resp.status === 401) {
+      accessToken = null;
+      tokenExpiresAt = 0;
+      updateAuthUI();
+      throw new Error('AUTH_FAILED');
+    }
+    return resp;
+  }
   // プロアクティブ更新（期限切れ or 既に切れている場合のみ）
   if (accessToken && Date.now() >= tokenExpiresAt) {
     try { await requestToken({ silent: true }); }
@@ -1173,12 +1202,16 @@ async function apiFetch(url, options = {}) {
 }
 
 window.addEventListener('load', () => {
+  if (PROXY_MODE) {
+    initProxyAuth();
+  } else {
   const check = setInterval(() => {
     if (typeof google !== 'undefined' && google.accounts) {
       clearInterval(check);
       initGIS();
     }
   }, 100);
+  }
 
   // Service Worker 登録（PWAキャッシュ／オフライン対応）
   // 本番（GitHub Pages /shift-calendar/）と localhost の両方で動くよう、現在ページ基準の相対 sw.js を使い
@@ -1209,6 +1242,18 @@ function updateAuthUI() {
 }
 
 document.getElementById('authBtn').addEventListener('click', async () => {
+  if (PROXY_MODE) {
+    if (accessToken) {
+      try { await fetch('/auth/google/logout', { method: 'POST', credentials: 'same-origin' }); } catch (e) {}
+      accessToken = null;
+      tokenExpiresAt = 0;
+      updateAuthUI();
+      showToast('カレンダー連携を解除しました');
+    } else {
+      location.href = '/auth/google/start?return=' + encodeURIComponent(location.pathname);
+    }
+    return;
+  }
   if (accessToken) {
     google.accounts.oauth2.revoke(accessToken);
     accessToken = null;
@@ -1355,7 +1400,7 @@ async function fetchCalendarEvents() {
 
   const timeMin = new Date(currentYear, currentMonth, 1).toISOString();
   const timeMax = new Date(currentYear, currentMonth + 1, 0, 23, 59, 59).toISOString();
-  const url = `https://www.googleapis.com/calendar/v3/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=250`;
+  const url = `${CAL_BASE}/calendars/primary/events?timeMin=${encodeURIComponent(timeMin)}&timeMax=${encodeURIComponent(timeMax)}&singleEvents=true&maxResults=250`;
 
   try {
     const resp = await apiFetch(url);
@@ -1381,7 +1426,7 @@ async function deleteCalendarEvent(eventId) {
   if (!accessToken) return false;
   try {
     const resp = await apiFetch(
-      `https://www.googleapis.com/calendar/v3/calendars/primary/events/${encodeURIComponent(eventId)}`,
+      `${CAL_BASE}/calendars/primary/events/${encodeURIComponent(eventId)}`,
       { method: 'DELETE' }
     );
     return resp.ok || resp.status === 204;
@@ -1610,7 +1655,7 @@ document.getElementById('registerBtn').addEventListener('click', async () => {
     progressText.textContent = `${i + 1} / ${dates.length} 件処理中...`;
 
     try {
-      const resp = await apiFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      const resp = await apiFetch(CAL_BASE + '/calendars/primary/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(shift.allDay ? {
@@ -1950,7 +1995,7 @@ document.getElementById('templateApplyBtn').addEventListener('click', async () =
     progressText.textContent = `${i + 1} / ${pairs.length} 件処理中...`;
 
     try {
-      const resp = await apiFetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
+      const resp = await apiFetch(CAL_BASE + '/calendars/primary/events', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(shift.allDay ? {
