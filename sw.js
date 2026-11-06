@@ -5,7 +5,7 @@
 //   - Google Fonts: Cache-First
 // 更新方法: CACHE_VERSION を上げると古いキャッシュを破棄して再キャッシュする。
 
-const CACHE_VERSION = 'v3-2026-05-24';
+const CACHE_VERSION = 'v4-2026-11-07';
 const CACHE_NAME = `shifton-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [
@@ -60,6 +60,8 @@ self.addEventListener('fetch', (event) => {
   }
 
   const sameOrigin = url.origin === self.location.origin;
+  // 家族サイト（home.goshu.net）の中継 API と OAuth はキャッシュしない（予定や連携状態が古くなるため）
+  if (sameOrigin && (url.pathname.startsWith('/api/') || url.pathname.startsWith('/auth/'))) return;
   const isGoogleFonts =
     url.hostname === 'fonts.googleapis.com' ||
     url.hostname === 'fonts.gstatic.com';
