@@ -5,7 +5,7 @@
 //   - Google Fonts: Cache-First
 // 更新方法: CACHE_VERSION を上げると古いキャッシュを破棄して再キャッシュする。
 
-const CACHE_VERSION = 'v4-2026-11-07';
+const CACHE_VERSION = 'v5-2026-11-14';
 const CACHE_NAME = `shifton-${CACHE_VERSION}`;
 
 const PRECACHE_URLS = [

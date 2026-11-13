@@ -2,7 +2,7 @@
   "id": "./",
   "name": "しふとん🌱",
   "short_name": "しふとん",
-  "description": "Googleカレンダーにシフトをサクッと登録できるみどりんのアプリ",
+  "description": "Googleカレンダーにシフトをサクッと登録できるしふとんのアプリ",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
